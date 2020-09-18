@@ -1,0 +1,2 @@
+mu = {'XL': 1.0, 'XR': 1.0, 'beta': 0.24, 'gamma': 3.4, 'exponent': 1.0, 'alpha': 4., 'tau': 125.0, 'NRa': 2.0, 'NRs': 1.0, 'noise_level': 0.0025, 'var_inh': 120.0, 'tau_inh': 50, 'var_inh_infl': 0.0, 'NRa_var_inh': 2.0, 'NRs_var_inh': 1.0, 'noise_color':1}
+file_name = 'data/Colored_noise_test6'

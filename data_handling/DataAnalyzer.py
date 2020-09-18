@@ -12,8 +12,10 @@ import os, sys, pickle, math, thread, time, datetime
 import scipy as sp
 import scipy.stats as stats
 import numpy as np
-import matplotlib.pylab as pl
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.pylab as pl
 from IPython import embed as shell
 
 H1, H2 = 0,1
@@ -63,15 +65,15 @@ class DataAnalyzer(object):
 			pl.plot(self.simulation_data[i,::10,1], 'g', alpha = 0.75, label = 'H2')
 			s.set_ylim([0,1])
 			s = s.twinx()
-			pl.plot(self.simulation_data[i,::10,4], 'k', alpha = 0.55, label = 'C') 
+			#pl.plot(self.simulation_data[i,::10,4], 'k', alpha = 0.55, label = 'C') 
 			
 			leg = s.legend(fancybox = True)
 			leg.get_frame().set_alpha(0.5)
 			if leg:
 				for t in leg.get_texts():
-				    t.set_fontsize('small')    # the legend text fontsize
+					t.set_fontsize('small')    # the legend text fontsize
 				for l in leg.get_lines():
-				    l.set_linewidth(3.5)  # the legend line width
+					l.set_linewidth(3.5)  # the legend line width
 			
 			s = fig.add_subplot(212)
 			s.set_title('simulation results')
@@ -86,9 +88,9 @@ class DataAnalyzer(object):
 			leg.get_frame().set_alpha(0.5)
 			if leg:
 				for t in leg.get_texts():
-				    t.set_fontsize('small')    # the legend text fontsize
+					t.set_fontsize('small')    # the legend text fontsize
 				for l in leg.get_lines():
-				    l.set_linewidth(3.5)  # the legend line width
+					l.set_linewidth(3.5)  # the legend line width
 			
 			plot_file.savefig()
 			pl.close()
@@ -110,17 +112,21 @@ class DataAnalyzer(object):
 		smoothed_dtc = np.zeros((difference_time_course.shape[0] + smoothing_kernel_width))
 		smoothed_dtc[smoothing_kernel_width/2:-smoothing_kernel_width/2] = signal.fftconvolve(difference_time_course, gauss_pdf, 'same')
 		smoothed_dtc = smoothed_dtc[smoothing_kernel_width/2:-smoothing_kernel_width/2]
-		
-		transition_occurrence_times = np.arange(smoothed_dtc.shape[0])[np.array(np.abs((np.diff(np.sign(smoothed_dtc)))/2.0), dtype = bool)]
+		#index
+		idx = np.array(np.abs((np.diff(np.sign(np.insert(smoothed_dtc,0,0)))/2.0))).astype('bool')
+
+		transition_occurrence_times = np.arange(smoothed_dtc.shape[0])[idx]
 		return transition_occurrence_times
 	
 	def correlate_triad(self, H, C, dur):
 		"""docstring for correlate_triad"""
+		"TODO eliminate C"
 		from scipy.stats import spearmanr
 		return [spearmanr(dur, C), spearmanr(H, dur), spearmanr(H, C)] 
 	
 	def single_time_course_to_percepts(self, simulation_data, smoothing_kernel_width = 200, axScatter = None, axHistx = None, axHisty = None, color_D = 'r', color_H = 'b', value = 0.0, C_sampling_interval = [-25, 50], H_sampling_interval = [50,-25], plot = True, output_raw_data = False, correlate_which_entity = 0):
 		"""This method doesn't care at all about transition durations"""
+		"TODO eliminate C"
 		transition_occurrence_times = self.transition_occurrence_times(simulation_data = simulation_data, smoothing_kernel_width = smoothing_kernel_width)
 		transition_occurrence_times = transition_occurrence_times[(transition_occurrence_times > -C_sampling_interval[0]) * (transition_occurrence_times < (simulation_data.shape[0] - C_sampling_interval[1]))]
 		
@@ -130,7 +136,7 @@ class DataAnalyzer(object):
 		percept_durations_separated = [percept_durations[::2], percept_durations[1::2]]
 		
 		if transition_occurrence_times_separated[0].shape[0] > 2:
-			C_vals = [[],[]]
+			#C_vals = [[],[]]
 			H_vals = [[],[]]
 			dur_vals = [[],[]]
 			corrs = [[],[]]
@@ -139,14 +145,15 @@ class DataAnalyzer(object):
 				nr_events = np.min([transition_occurrence_times_separated[j].shape[0], percept_durations_separated[j].shape[0]])
 				percept_onset_offsets = np.array([transition_occurrence_times_separated[j][:nr_events],transition_occurrence_times_separated[j][:nr_events] + percept_durations_separated[j][:nr_events]]).T
 				# quickly take the mean of the C signal around the time of a transition
-				C_sampling_periods = np.vstack([transition_occurrence_times_separated[j][:nr_events] + C_sampling_interval[0], transition_occurrence_times_separated[j][:nr_events] + C_sampling_interval[1]]).T
-				C_values_per_transition = np.array([simulation_data[c[0]:c[1],4].mean() for c in C_sampling_periods])[:-1]
+				#C_sampling_periods = np.vstack([transition_occurrence_times_separated[j][:nr_events] + C_sampling_interval[0], transition_occurrence_times_separated[j][:nr_events] + C_sampling_interval[1]]).T
+				#C_values_per_transition = np.array([simulation_data[c[0]:c[1],4].mean() for c in C_sampling_periods])#[:-1]
 				
 				H_sampling_periods = np.vstack([percept_onset_offsets[:,0] + H_sampling_interval[0], percept_onset_offsets[:,1] + H_sampling_interval[1]]).T
-				H_values_per_percept = np.array([[(simulation_data[h[0]:h[1],0]+simulation_data[h[0]:h[1],1]).mean(), (simulation_data[h[0]:h[1],0]+simulation_data[h[0]:h[1],1]).var(), np.abs((simulation_data[h[0]:h[1],0]-simulation_data[h[0]:h[1],1])).mean(), np.abs((simulation_data[h[0]:h[1],0]-simulation_data[h[0]:h[1],1])).var()] for h in H_sampling_periods])[:-1]
+				H_values_per_percept = np.array([[(simulation_data[h[0]:h[1],0]+simulation_data[h[0]:h[1],1]).mean(), (simulation_data[h[0]:h[1],0]+simulation_data[h[0]:h[1],1]).var(), np.abs((simulation_data[h[0]:h[1],0]-simulation_data[h[0]:h[1],1])).mean(), np.abs((simulation_data[h[0]:h[1],0]-simulation_data[h[0]:h[1],1])).var()] for h in H_sampling_periods])#[:-1]
 				
-				which_transitions_are_valid = -np.isnan(C_values_per_transition)
+				which_transitions_are_valid = ~np.isnan(C_values_per_transition)
 				C_values_per_transition = C_values_per_transition[which_transitions_are_valid]
+
 				percept_durations_for_corr = percept_durations_separated[j][which_transitions_are_valid]
 				
 				C_vals[j] = C_values_per_transition
@@ -261,16 +268,16 @@ class DataAnalyzer(object):
 		
 		correlation_results = []
 		for i in order:
-			correlation_results.append(self.single_time_course_to_percepts(self.simulation_data[i], axScatter = axScatter, axHistx = axHistx, axHisty = axHisty, color_D = colors_D[i], color_H = colors_H[i], value = self.simulation_parameters[i][sort_variable]))
+			correlation_results.append(self.single_time_course_to_percepts(self.simulation_data[i], axScatter = axScatter, axHistx = axHistx, axHisty = axHisty, color_D = colors_D[i], color_H = colors_H[i], value = self.simulation_parameters[i][sort_variable], output_raw_data = False))
 		correlation_results = np.array(correlation_results)
 		
 		leg = axScatter.legend(fancybox = True)		
 		leg.get_frame().set_alpha(0.5)
 		if leg:
 			for t in leg.get_texts():
-			    t.set_fontsize('x-small')    # the legend text fontsize
+				t.set_fontsize('x-small')    # the legend text fontsize
 			for l in leg.get_lines():
-			    l.set_linewidth(3.5)  # the legend line width
+				l.set_linewidth(3.5)  # the legend line width
 		
 		now = datetime.datetime.now()
 		pl.savefig(plot_file_name)
@@ -293,9 +300,9 @@ class DataAnalyzer(object):
 		leg.get_frame().set_alpha(0.5)
 		if leg:
 			for t in leg.get_texts():
-			    t.set_fontsize('x-small')    # the legend text fontsize
+				t.set_fontsize('x-small')    # the legend text fontsize
 			for l in leg.get_lines():
-			    l.set_linewidth(3.5)  # the legend line width
+				l.set_linewidth(3.5)  # the legend line width
 		simpleaxis(s)
 		spine_shift(s)
 		pl.savefig(os.path.splitext(plot_file_name)[0] + '_corr.pdf')

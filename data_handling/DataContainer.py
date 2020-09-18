@@ -13,8 +13,11 @@ from subprocess import *
 import scipy as sp
 import scipy.stats as stats
 import numpy as np
-import matplotlib.pylab as pl
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.pylab as pl
+
 # from IPython import embed as shell
 
 from tables import *
@@ -44,26 +47,26 @@ class DataContainer(object):
 		
 		if os.path.isfile(self.hdf5_filename) and add_to_file:
 			# os.system('rm ' + self.hdf5_filename)
-			h5file = openFile(self.hdf5_filename, mode = "r+", title = "simulation results file")
+			h5file = open_file(self.hdf5_filename, mode = "r+", title = "simulation results file")
 		elif os.path.isfile(self.hdf5_filename) and not add_to_file:
 			os.system('rm ' + self.hdf5_filename)
-			h5file = openFile(self.hdf5_filename, mode = "w", title = "simulation results file")
+			h5file = open_file(self.hdf5_filename, mode = "w", title = "simulation results file")
 		else:
-			h5file = openFile(self.hdf5_filename, mode = "w", title = "simulation results file")
+			h5file = open_file(self.hdf5_filename, mode = "w", title = "simulation results file")
 			
 		try:
-			thisRunGroup = h5file.getNode(where = "/", name = run_name, classname='Group')
+			thisRunGroup = h5file.get_node(where = "/", name = run_name, classname='Group')
 		except NoSuchNodeError:
 			# import actual data
 			now = datetime.datetime.now()
-			thisRunGroup = h5file.createGroup("/", run_name, run_name + ' created at ' + now.strftime("%Y-%m-%d_%H.%M.%S"))
-		h5file.createArray(thisRunGroup, 'simulation_data', self.result_array, '')
+			thisRunGroup = h5file.create_group("/", run_name, run_name + ' created at ' + now.strftime("%Y-%m-%d_%H.%M.%S"))
+		h5file.create_array(thisRunGroup, 'simulation_data', self.result_array, '')
 		
 		ptd = [(k, np.float64) for k in np.unique(np.concatenate([k.keys() for k in self.parameter_array]))]
 		self.parameterTypeDictionary = np.dtype(ptd)
 		
 		# create a table for the parameters of these runs
-		parameterTable = h5file.createTable(thisRunGroup, 'simulation_parameters', self.parameterTypeDictionary)
+		parameterTable = h5file.create_table(thisRunGroup, 'simulation_parameters', self.parameterTypeDictionary)
 		# fill up the table
 		trial = parameterTable.row
 		for r in self.parameter_array:
@@ -77,10 +80,10 @@ class DataContainer(object):
 	def data_from_hdf_file(self, run_name):
 		if not os.path.isfile(self.hdf5_filename):
 			print self.hdf5_filename + ' is  not a file'
-		self.h5file = openFile(self.hdf5_filename, mode = "r")
+		self.h5file = open_file(self.hdf5_filename, mode = "r")
 		
 		try:
-			thisRunGroup = self.h5file.getNode(where = "/", name = run_name, classname='Group')
+			thisRunGroup = self.h5file.get_node(where = "/", name = run_name, classname='Group')
 		except NoSuchNodeError:
 			# import actual data
 			print run_name + ' is not a run in ' + self.hdf5_filename
