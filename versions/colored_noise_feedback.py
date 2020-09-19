@@ -9,7 +9,7 @@ Copyright (c) 2011 __MyCompanyName__. All rights reserved.
 
 import os, sys, pickle, math, thread, time
 from subprocess import *
-sys.path.append('/home/mpib/kamp/LNDG/AttractorModel/ppattractor/data_handling')
+sys.path.append('/home/mpib/kamp/LNDG/Noise_Color_Attractor_Model/data_handling')
 
 import scipy as sp
 import scipy.stats as stats
@@ -19,6 +19,7 @@ matplotlib.use('Agg')
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pylab as pl
 from IPython import embed as shell
+from model_config import mu
 
 from tables import *
 import pp
@@ -49,9 +50,6 @@ def func(t, y, mu):
 	A1, A2 = 2,3
 	C = 4
 	
-	# dydt[H1] = mu['XL'] - (1. + y[A1]) * y[H1] + mu['beta'] * y[A1] - mu['gamma'] * S(y[H2], mu['NRa'], mu['NRs']);
-	# dydt[H2] = mu['XR'] - (1. + y[A2]) * y[H2] + mu['beta'] * y[A2] - mu['gamma'] * S(y[H1], mu['NRa'], mu['NRs']);
-	
 	dydt[H1] = mu['XL'] - (1. + y[A1]) * y[H1] + mu['beta'] * y[A1] - mu['gamma'] * S(y[H2], mu['NRa'], mu['NRs']) - mu['var_inh_infl'] * S(y[C], mu['NRa_var_inh'], mu['NRs_var_inh']);
 	dydt[H2] = mu['XR'] - (1. + y[A2]) * y[H2] + mu['beta'] * y[A2] - mu['gamma'] * S(y[H1], mu['NRa'], mu['NRs']) - mu['var_inh_infl'] * S(y[C], mu['NRa_var_inh'], mu['NRs_var_inh']);
 	dydt[A1] = ( -pow(y[A1],mu['exponent']) + ( mu['alpha'] * S(y[H1], mu['NRa'], mu['NRs']) ) ) / mu['tau'];
@@ -81,8 +79,8 @@ def run_sim(mu, nr_timepoints, func, npS):
 	t1 = float(nr_timepoints)
 	# initial values - all 0.
 	y = pygsl._numobj.array((0.5, 0.5, 0.0, 0.01, 1.0))
-    
-    #load noise file 
+	
+	#load noise file 
 	noise_dict = {1:'white', 2:'pink', 3:'blue'}
 	noise_color = noise_dict[mu['noise_color']]
 	noise_file = 'colored_noise/%s_noise.csv' % (noise_color)
@@ -99,10 +97,10 @@ def run_sim(mu, nr_timepoints, func, npS):
 		# y += numpy.concatenate(([0.0, 0.0, 0.0, 0.0], numpy.random.randn(1) * mu['noise_level']))
 		# add noise to activities and to novel interaction
 		y += numpy.array([noise[0,iters] * mu['noise_level'] / (mu['var_inh_noise_infl'] * S(y[4], mu['NRa_var_inh'], mu['NRs_var_inh'])), 
-		numpy.random.randn() * mu['noise_level'] / (mu['var_inh_noise_infl'] * S(y[4], mu['NRa_var_inh'], mu['NRs_var_inh'])), 
+		noise[1,iters] * mu['noise_level'] / (mu['var_inh_noise_infl'] * S(y[4], mu['NRa_var_inh'], mu['NRs_var_inh'])), 
 		0.0, 
 		0.0, 
-		numpy.random.randn() * mu['var_inh_noise_level']]) # y[4] * numpy.random.randn(1) * mu['var_inh_noise_level']]
+		noise[2,iters] * mu['var_inh_noise_level']]) # y[4] * numpy.random.randn(1) * mu['var_inh_noise_level']]
 		# add noise only to novel interaction, but graded by the inverse of its value.
 		# y += numpy.concatenate(([0.0, 0.0, 0.0, 0.0], numpy.random.randn(1) * mu['noise_level']))
 		# add noise to both populations and transient signal
@@ -118,9 +116,15 @@ def run_sim(mu, nr_timepoints, func, npS):
 	return [mu, op]
 
 # mu parameters based on dictionary
-mu = {'XL': 1.0, 'XR': 1.0, 'beta': 0.24, 'gamma': 3.75, 'exponent': 1.0, 'alpha': 1.75, 'tau': 100.0, 'NRa': 2.0, 'NRs': 1.0, 'noise_level': 0.0025, 'var_inh': 120.0, 'tau_inh': 50, 'var_inh_infl': 0.0, 'NRa_var_inh': 2.0, 'NRs_var_inh': 1.0, 'var_inh_noise_level': 0.000, 'var_inh_noise_infl': 0.00001}
 nr_timepoints = 60000
-file_name = 'data/C_noise_2'
+data_dir = 'data/Feedback/'
+if not os.path.exists(data_dir):
+	os.mkdir(data_dir)
+plot_dir = 'plots/Feedback/'
+if not os.path.exists(plot_dir):
+	os.mkdir(plot_dir)
+file_name = data_dir + 'C'
+plot_name = plot_dir + 'C'
 
 simulate = True 
 
@@ -129,44 +133,50 @@ pnl_range = np.linspace(0.008, 0.015, 12)
 inl_range = np.linspace(0.04, 0.05, 24)
 
 corr_res = np.zeros((pnl_range.shape[0], inl_range.shape[0]))
+noise_dict = {1:'white', 2:'pink', 3:'blue'}
 
-for i, population_noise_level in enumerate(pnl_range):
-# for j, inhibition_noise_level in enumerate(inl_range):
-	# mu['noise_level'] = population_noise_level
-	mu['var_inh_noise_level'] = population_noise_level
-		
-	which_var = 'var_inh_noise_infl'
-	which_values = inl_range
-	rn = 'inl_inf_' + str(population_noise_level)
-	
-	print 'running simulation with %s = %0.5f' % ('var_inh_noise_level', population_noise_level)
-	
-	# Create an instance of callback class
-	nr_simulations = which_values.shape[0]
-	dc = DataContainer(file_name + '.hdf5')  
-	da = DataAnalyzer(dc)
-	
-	if simulate:
-		dc.setup_for_simulation(nr_timepoints = nr_timepoints, nr_simulations = nr_simulations, nr_variables = nr_variables)
-		# running these in parallel
-		# Creates jobserver with automatically detected number of workers
-		job_server = pp.Server(ppservers=())
+for noise_nr, noise_color in noise_dict.items():
+	print noise_nr, noise_color
+	mu['noise_color'] = noise_nr
+	file_name += '_' + noise_color + '_noise'
+	plot_name += '_' + noise_color + '_noise'
 
-		# Execute the same task with different amount of active workers and measure the time
-		for index in xrange(nr_simulations):
-			mu[which_var] = which_values[index]
-			job_server.submit(run_sim, (mu, nr_timepoints, func, npS), callback=dc.save_to_array)
-		#wait for jobs in all groups to finish 
-		job_server.wait()
-		job_server.destroy()
+	for i, population_noise_level in enumerate(pnl_range):
+	# for j, inhibition_noise_level in enumerate(inl_range):
+		# mu['noise_level'] = population_noise_level
+		mu['var_inh_noise_level'] = population_noise_level	
+		which_var = 'var_inh_noise_infl'
+		which_values = inl_range
+		rn =  'inl_inf_' + str(population_noise_level)
 		
-		dc.save_to_hdf_file(run_name = rn.replace('.',''))
-	
-		da.plot_activities(plot_file_name = file_name + '_act_' + rn + '.pdf', run_name = rn.replace('.',''), sort_variable = which_var)
-	
-	da.all_time_courses_to_percepts(run_name = rn.replace('.',''), sort_variable = which_var, plot_file_name = file_name + '_' + rn + '.pdf')
-	# da.plot_activities(plot_file_name = 'data/act_' + rn + '.pdf', run_name = rn.replace('.',''), sort_variable = which_var)
-	# corr_res[i:] = da.correlation_results[:,0]
+		print 'running simulation with %s colored noise and %s = %0.5f' % (noise_color, 'var_inh_noise_level', population_noise_level)
+		
+		# Create an instance of callback class
+		nr_simulations = which_values.shape[0]
+		dc = DataContainer(file_name + '.hdf5')  
+		da = DataAnalyzer(dc)
+		
+		if simulate:
+			dc.setup_for_simulation(nr_timepoints = nr_timepoints, nr_simulations = nr_simulations, nr_variables = nr_variables)
+			# running these in parallel
+			# Creates jobserver with automatically detected number of workers
+			job_server = pp.Server(ppservers=())
+
+			# Execute the same task with different amount of active workers and measure the time
+			for index in xrange(nr_simulations):
+				mu[which_var] = which_values[index]
+				job_server.submit(run_sim, (mu, nr_timepoints, func, npS), callback=dc.save_to_array)
+			#wait for jobs in all groups to finish 
+			job_server.wait()
+			job_server.destroy()
+			
+			dc.save_to_hdf_file(run_name = rn.replace('.',''))
+		
+			da.plot_activities(plot_file_name = plot_name + '_act_' + rn + '.pdf', run_name = rn.replace('.',''), sort_variable = which_var)
+		
+		#da.all_time_courses_to_percepts(run_name = rn.replace('.',''), sort_variable = which_var, plot_file_name = file_name + '_' + rn + '.pdf')
+		# da.plot_activities(plot_file_name = 'data/act_' + rn + '.pdf', run_name = rn.replace('.',''), sort_variable = which_var)
+		# corr_res[i:] = da.correlation_results[:,0]
 	
 # fig = pl.figure()
 # ax = fig.add_subplot(111)	

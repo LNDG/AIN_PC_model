@@ -9,7 +9,7 @@ Copyright (c) 2011 __MyCompanyName__. All rights reserved.
 
 import os, sys, pickle, math, thread, time
 from subprocess import *
-sys.path.append('/home/mpib/kamp/LNDG/AttractorModel/ppattractor/data_handling')
+sys.path.append('/home/mpib/kamp/LNDG/Noise_Color_Attractor_Model/data_handling')
 
 import scipy as sp
 import scipy.stats as stats
@@ -22,7 +22,7 @@ from IPython import embed as shell
 
 from tables import *
 import pp
-from model_config import mu, file_name
+from model_config import *
 from DataContainer import DataContainer
 from DataAnalyzer import DataAnalyzer
 
@@ -102,8 +102,16 @@ def run_sim(mu, nr_timepoints, func, npS):
 	# return both output and parameter dictionary
 	return [mu, op]
 
+data_dir = 'data/Colored_Noise_Gaba/'
+if not os.path.exists(data_dir):
+    os.mkdir(data_dir)
+plot_dir = 'plots/Colored_Noise_Gaba/'
+if not os.path.exists(plot_dir):
+    os.mkdir(plot_dir)
+file_name = data_dir + 'Colored_Noise'
+plot_name = plot_dir + 'Colored_Noise'
+
 # corr_res = np.zeros((9))
-noise_level_range = np.linspace(0.0025, 0.015, 12) # defines the range of noise level
 noise_dict = {1:'white', 2:'pink', 3:'blue'}
 corr_res = np.zeros((len(noise_dict), noise_level_range.shape[0]))
 
@@ -111,7 +119,7 @@ for noise_nr, noise_color in noise_dict.items():
 	mu['noise_color'] = noise_nr
 	which_var = 'noise_level'
 	#which_values = inl_range
-	rn = noise_color + '_noise'
+	rn = noise_color
 	
 	print 'running simulation with %s noise.' % (noise_color)
 	
@@ -136,7 +144,7 @@ for noise_nr, noise_color in noise_dict.items():
 		
 		dc.save_to_hdf_file(run_name = rn)
 	
-		da.plot_activities(plot_file_name = file_name + '_act_' + rn + '.pdf', run_name = rn, sort_variable = which_var)
+		da.plot_activities(plot_file_name = plot_name + '_act_' + rn + '.pdf', run_name = rn, sort_variable = which_var)
 	
 	# da.all_time_courses_to_percepts(run_name = rn.replace('.',''), sort_variable = which_var, plot_file_name = file_name + '_' + rn + '.pdf')
 	# da.plot_activities(plot_file_name = 'data/act_' + rn + '.pdf', run_name = rn.replace('.',''), sort_variable = which_var)

@@ -1,1 +1,3 @@
-mu = {'XL': 1.0, 'XR': 1.0, 'beta': 0.24, 'gamma': 3.4, 'exponent': 1.0, 'alpha': 4., 'tau': 125.0, 'NRa': 2.0, 'NRs': 1.0, 'noise_level': 0.0025, 'var_inh': 120.0, 'tau_inh': 50, 'var_inh_infl': 0.0, 'NRa_var_inh': 2.0, 'NRs_var_inh': 1.0, 'noise_color':1}
+import numpy as np
+mu = {'XL': 1.0, 'XR': 1.0, 'beta': 0.24, 'gamma': 3.75, 'exponent': 1.0, 'alpha': 1.75, 'tau': 100.0, 'NRa': 2.0, 'NRs': 1.0, 'noise_level': 0.0025, 'var_inh': 120.0, 'tau_inh': 50, 'var_inh_infl': 0.0, 'NRa_var_inh': 2.0, 'NRs_var_inh': 1.0, 'var_inh_noise_level': 0.000, 'var_inh_noise_infl': 0.00001, 'noise_color':1}
+noise_level_range = np.linspace(0.0025, 0.15, 24) # defines the range of noise level

@@ -5,13 +5,13 @@ for model in "${modelfiles[@]}"; do
 	echo "#SBATCH --job-name AttractorSimulation" >> jobfile.sh
 	echo "#SBATCH --time 2:0:0" >> jobfile.sh
 	echo "#SBATCH --cpus 5" >> jobfile.sh
-	echo "#SBATCH --mem 2GB" >> jobfile.sh
+	echo "#SBATCH --mem 5GB" >> jobfile.sh
 	echo "#SBATCH --mail-type NONE" >> jobfile.sh
-	echo "#SBATCH --output /home/mpib/kamp/LNDG/AttractorModel/logs/slurm-%j.out" >> jobfile.sh
+	echo "#SBATCH --output /home/mpib/kamp/LNDG/Noise_Color_Attractor_Model/logs/slurm-%j.out" >> jobfile.sh
 
-	echo "cd $HOME/LNDG/AttractorModel/ppattractor" >> jobfile.sh
+	echo "cd $HOME/LNDG/Noise_Color_Attractor_Model" >> jobfile.sh
 	echo "module load conda" >> jobfile.sh
-	echo "conda activate py2attractor" >> jobfile.sh
+	echo "conda activate py2" >> jobfile.sh
 
 	echo "ipython versions/$model" >> jobfile.sh
 	sbatch jobfile.sh
