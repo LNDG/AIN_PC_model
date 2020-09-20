@@ -28,6 +28,7 @@ from DataContainer import DataContainer
 from DataAnalyzer import DataAnalyzer
 
 nr_variables = 5
+nr_noise = 3 #number of noise timecourses
 
 def npS( input, mu ):
 	input[input < 0] = 0.0
@@ -85,7 +86,7 @@ def run_sim(mu, nr_timepoints, func, npS):
 	noise_color = noise_dict[mu['noise_color']]
 	noise_file = 'colored_noise/%s_noise.csv' % (noise_color)
 	noise = numpy.genfromtxt(noise_file, delimiter=',')
-	
+	noise_tc = numpy.array([[]])
 	op = numpy.zeros((nr_timepoints, dimension))
 	iters = 0
 	for t in numpy.linspace(0, t1, nr_timepoints):
@@ -96,11 +97,16 @@ def run_sim(mu, nr_timepoints, func, npS):
 		# add noise to novel interaction
 		# y += numpy.concatenate(([0.0, 0.0, 0.0, 0.0], numpy.random.randn(1) * mu['noise_level']))
 		# add noise to activities and to novel interaction
-		y += numpy.array([noise[0,iters] * mu['noise_level'] / (mu['var_inh_noise_infl'] * S(y[4], mu['NRa_var_inh'], mu['NRs_var_inh'])), 
+		noise_step = numpy.array([noise[0,iters] * mu['noise_level'] / (mu['var_inh_noise_infl'] * S(y[4], mu['NRa_var_inh'], mu['NRs_var_inh'])), 
 		noise[1,iters] * mu['noise_level'] / (mu['var_inh_noise_infl'] * S(y[4], mu['NRa_var_inh'], mu['NRs_var_inh'])), 
 		0.0, 
 		0.0, 
 		noise[2,iters] * mu['var_inh_noise_level']]) # y[4] * numpy.random.randn(1) * mu['var_inh_noise_level']]
+		y += noise_step
+		if iters == 0:
+			noise_tc = noise_step[numpy.newaxis,[0,1,4]]
+		else:
+			noise_tc = numpy.concatenate((noise_tc, noise_step[numpy.newaxis,[0,1,4]]), axis=0)
 		# add noise only to novel interaction, but graded by the inverse of its value.
 		# y += numpy.concatenate(([0.0, 0.0, 0.0, 0.0], numpy.random.randn(1) * mu['noise_level']))
 		# add noise to both populations and transient signal
@@ -112,6 +118,9 @@ def run_sim(mu, nr_timepoints, func, npS):
 	# naka rushton on activities:
 	npS(op[:,0], mu)
 	npS(op[:,1], mu)
+	# join noise values to output 
+	print op.shape, noise_tc.shape
+	op = numpy.concatenate((op, noise_tc), axis=1)
 	# return both output and parameter dictionary
 	return [mu, op]
 
@@ -136,10 +145,7 @@ corr_res = np.zeros((pnl_range.shape[0], inl_range.shape[0]))
 noise_dict = {1:'white', 2:'pink', 3:'blue'}
 
 for noise_nr, noise_color in noise_dict.items():
-	print noise_nr, noise_color
 	mu['noise_color'] = noise_nr
-	file_name += '_' + noise_color + '_noise'
-	plot_name += '_' + noise_color + '_noise'
 
 	for i, population_noise_level in enumerate(pnl_range):
 	# for j, inhibition_noise_level in enumerate(inl_range):
@@ -147,7 +153,7 @@ for noise_nr, noise_color in noise_dict.items():
 		mu['var_inh_noise_level'] = population_noise_level	
 		which_var = 'var_inh_noise_infl'
 		which_values = inl_range
-		rn =  'inl_inf_' + str(population_noise_level)
+		rn =  noise_color + '_noise_inl_inf_' + str(population_noise_level)
 		
 		print 'running simulation with %s colored noise and %s = %0.5f' % (noise_color, 'var_inh_noise_level', population_noise_level)
 		
@@ -157,7 +163,7 @@ for noise_nr, noise_color in noise_dict.items():
 		da = DataAnalyzer(dc)
 		
 		if simulate:
-			dc.setup_for_simulation(nr_timepoints = nr_timepoints, nr_simulations = nr_simulations, nr_variables = nr_variables)
+			dc.setup_for_simulation(nr_timepoints = nr_timepoints, nr_simulations = nr_simulations, nr_variables = nr_variables, nr_noise = nr_noise)
 			# running these in parallel
 			# Creates jobserver with automatically detected number of workers
 			job_server = pp.Server(ppservers=())
@@ -172,7 +178,7 @@ for noise_nr, noise_color in noise_dict.items():
 			
 			dc.save_to_hdf_file(run_name = rn.replace('.',''))
 		
-			da.plot_activities(plot_file_name = plot_name + '_act_' + rn + '.pdf', run_name = rn.replace('.',''), sort_variable = which_var)
+			da.plot_activities(plot_file_name = plot_name + '_act_' + rn + '.pdf',nr_variables=nr_variables, run_name = rn.replace('.',''), sort_variable = which_var)
 		
 		#da.all_time_courses_to_percepts(run_name = rn.replace('.',''), sort_variable = which_var, plot_file_name = file_name + '_' + rn + '.pdf')
 		# da.plot_activities(plot_file_name = 'data/act_' + rn + '.pdf', run_name = rn.replace('.',''), sort_variable = which_var)

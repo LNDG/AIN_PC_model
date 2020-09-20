@@ -28,6 +28,7 @@ from DataAnalyzer import DataAnalyzer
 
 #configurations for the model
 nr_variables = 4 #number of variables in the model
+nr_noise = 2 #number of noise timecourses
 # model parameters
 nr_timepoints = 60000
 simulate=True
@@ -79,7 +80,7 @@ def run_sim(mu, nr_timepoints, func, npS):
 	h = 1
 	t1 = float(nr_timepoints)
 	# initial values - all 0.
-	y = pygsl._numobj.array((0., 0., 0., 0.))
+	y = pygsl._numobj.array((0.5, 0.5, 0., 0.))
 	op = numpy.zeros((nr_timepoints, dimension))
 	
 	#load noise file 
@@ -87,28 +88,38 @@ def run_sim(mu, nr_timepoints, func, npS):
 	noise_color = noise_dict[mu['noise_color']]
 	noise_file = 'colored_noise/%s_noise.csv' % (noise_color)
 	noise = numpy.genfromtxt(noise_file, delimiter=',')
+	noise_tc = numpy.array([[]])
 	iters = 0
 	for t in numpy.linspace(0, t1, nr_timepoints):
 		t, h, y = evolve.apply(t, t1, h, y)
 		op[iters] = y
 		# add colored noise to instantaneous activity:
-		y += numpy.array([noise[0,iters] * mu['noise_level'], noise[1,iters] * mu['noise_level'], 0.0, 0.0])
+		noise_step = numpy.array([noise[0,iters] * mu['noise_level'], noise[1,iters] * mu['noise_level'], 0.0, 0.0])
+		y += noise_step
+		if iters == 0:
+			noise_tc = noise_step[numpy.newaxis,[0,1]]
+		else:
+			noise_tc = numpy.concatenate((noise_tc, noise_step[numpy.newaxis,[0,1]]), axis=0)
+		
 		iters += 1
 	
 	op = numpy.array(op)
 	
-    # naka rushton on activities:
+	# naka rushton on activities:
 	npS(op[:,0], mu)
 	npS(op[:,1], mu)
+	# join noise values to output 
+	print op.shape, noise_tc.shape
+	op = numpy.concatenate((op, noise_tc), axis=1)
 	# return both output and parameter dictionary
 	return [mu, op]
 
 data_dir = 'data/Colored_Noise/'
 if not os.path.exists(data_dir):
-    os.mkdir(data_dir)
+	os.mkdir(data_dir)
 plot_dir = 'plots/Colored_Noise/'
 if not os.path.exists(plot_dir):
-    os.mkdir(plot_dir)
+	os.mkdir(plot_dir)
 file_name = data_dir + 'Colored_Noise'
 plot_name = plot_dir + 'Colored_Noise'
 
@@ -119,7 +130,7 @@ for noise_nr, noise_color in noise_dict.items():
 	mu['noise_color'] = noise_nr
 	which_var = 'noise_level'
 	#which_values = inl_range
-	rn = noise_color
+	rn = '_' + noise_color
 	
 	print 'running simulation with %s noise.' % (noise_color)
 	
@@ -129,7 +140,7 @@ for noise_nr, noise_color in noise_dict.items():
 	da = DataAnalyzer(dc)
 	
 	if simulate:
-		dc.setup_for_simulation(nr_timepoints = nr_timepoints, nr_simulations = nr_simulations, nr_variables = nr_variables)
+		dc.setup_for_simulation(nr_timepoints = nr_timepoints, nr_simulations = nr_simulations, nr_variables = nr_variables, nr_noise = nr_noise)
 		# running these in parallel
 		# Creates jobserver with automatically detected number of workers
 		job_server = pp.Server(ppservers=())
@@ -144,7 +155,7 @@ for noise_nr, noise_color in noise_dict.items():
 		
 		dc.save_to_hdf_file(run_name = rn)
 	
-		da.plot_activities(plot_file_name = plot_name + '_act_' + rn + '.pdf', run_name = rn, sort_variable = which_var)
+		da.plot_activities(plot_file_name = plot_name + rn + '.pdf', nr_variables = nr_variables, run_name = rn, sort_variable = which_var)
 	
 	# da.all_time_courses_to_percepts(run_name = rn.replace('.',''), sort_variable = which_var, plot_file_name = file_name + '_' + rn + '.pdf')
 	# da.plot_activities(plot_file_name = 'data/act_' + rn + '.pdf', run_name = rn.replace('.',''), sort_variable = which_var)

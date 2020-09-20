@@ -17,6 +17,8 @@ matplotlib.use('Agg')
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pylab as pl
 from IPython import embed as shell
+import seaborn as sns
+sns.set()
 
 H1, H2 = 0,1
 A1, A2 = 2,3
@@ -44,7 +46,7 @@ class DataAnalyzer(object):
 	def __init__(self, data_container):
 		self.data_container = data_container
 	
-	def plot_activities(self, plot_file_name, run_name, sort_variable = None):
+	def plot_activities(self, plot_file_name, nr_variables, run_name, sort_variable = None):
 		self.simulation_parameters, self.simulation_data = self.data_container.data_from_hdf_file(run_name)
 		plot_file = PdfPages(plot_file_name)
 		
@@ -55,47 +57,67 @@ class DataAnalyzer(object):
 			
 		for i in order:
 			fig = pl.figure(figsize = (15, 6))
-			s = fig.add_subplot(211)
-			s.set_title('simulation results')
-			s.set_xlabel('time [steps]')
-			s.set_ylabel('activity strength')
-			# s.set_ylim([0,1.3])
+			nr_grid = int((nr_variables-2)*2)
+			grid = pl.GridSpec(nr_grid, 1, wspace=0.4, hspace=0.3)
+			nr_datapoints = self.simulation_data.shape[1]/10
+
+			# create plot grid
+			act_ax = fig.add_subplot(grid[:int(nr_grid/2), 0])
+			noise1_ax = fig.add_subplot(grid[int(nr_grid/2):int(nr_grid/2+1),0])
+			noise2_ax = fig.add_subplot(grid[int(nr_grid/2+1):int(nr_grid/2+2),0])
+			if nr_variables == 5:
+				noise3_ax = fig.add_subplot(grid[-1,0])
 			
-			pl.plot(self.simulation_data[i,::10,0], 'r', alpha = 0.75, label = 'H1')
-			pl.plot(self.simulation_data[i,::10,1], 'g', alpha = 0.75, label = 'H2')
-			s.set_ylim([0,1])
-			s = s.twinx()
-			#pl.plot(self.simulation_data[i,::10,4], 'k', alpha = 0.55, label = 'C') 
+			# plot activity
+			act_ax.set_title('Simulation Results')
+			act_ax.set_ylabel('Activity Strength')
+			act_ax.tick_params(labelbottom=False)
+			act_ax.plot(self.simulation_data[i,::10,0], 'r', alpha = 0.75, label = 'H1')
+			act_ax.plot(self.simulation_data[i,::10,1], 'g', alpha = 0.75, label = 'H2')
+			if nr_variables == 5:
+				act_ax.plot(self.simulation_data[i,::10,4], 'k', alpha = 0.25, label = 'C') 
 			
-			leg = s.legend(fancybox = True)
-			leg.get_frame().set_alpha(0.5)
-			if leg:
-				for t in leg.get_texts():
-					t.set_fontsize('small')    # the legend text fontsize
-				for l in leg.get_lines():
-					l.set_linewidth(3.5)  # the legend line width
+			def setlegend(axes):
+				leg = axes.legend(loc='upper right', fancybox = True)
+				leg.get_frame().set_alpha(0.5)
+				if leg:
+					for t in leg.get_texts():
+						t.set_fontsize('small')    # the legend text fontsize
+					for l in leg.get_lines():
+						l.set_linewidth(3.5)  # the legend line width
+			setlegend(act_ax)
+
+			# plot noise 
+			noise_idx = nr_variables
+			noise1_ax.set_ylabel('Noise\nStrength', fontsize='small', rotation=45)
+			noise1_ax.tick_params(labelbottom=False)
+			noise1_ax.set_ylim(-0.3,0.3)
+			noise1_ax.plot(self.simulation_data[i,::10,noise_idx], 'r:', alpha = 0.50, label = 'Noise H1')
+			setlegend(noise1_ax)
+
+			noise2_ax.plot(self.simulation_data[i,::10,noise_idx+1], 'g:', alpha = 0.50, label = 'Noise H2')
+			noise2_ax.set_ylabel('Noise\nStrength', fontsize='small', rotation=45)
+			noise2_ax.set_ylim(-0.3,0.3)
+			setlegend(noise2_ax)
 			
-			s = fig.add_subplot(212)
-			s.set_title('simulation results')
-			s.set_xlabel('time [steps]')
-			s.set_ylabel('adaptation strength')
-			
-			pl.plot(self.simulation_data[i,::10,2], 'r--', alpha = 0.25, label = 'A1')
-			pl.plot(self.simulation_data[i,::10,3], 'g--', alpha = 0.25, label = 'A2')
-			pl.text(10, 1.0, str(self.simulation_parameters[i]), fontsize = 8)
-			
-			leg = s.legend(fancybox = True)
-			leg.get_frame().set_alpha(0.5)
-			if leg:
-				for t in leg.get_texts():
-					t.set_fontsize('small')    # the legend text fontsize
-				for l in leg.get_lines():
-					l.set_linewidth(3.5)  # the legend line width
+			def setlowerticks(axes):
+				axes.set_xlabel('Time [Seconds]')
+				axes.set_xticks(np.arange(0,nr_datapoints+1, 1000))
+				axes.set_xticklabels(np.arange(0, nr_datapoints/100+1, 10))
+
+			if nr_variables == 5:
+				noise2_ax.tick_params(labelbottom=False)
+				noise3_ax.plot(self.simulation_data[i,::10,noise_idx+2], 'k:', alpha = 0.50, label = 'Noise C')
+				noise3_ax.set_ylabel('Noise\nStrength', fontsize='small', rotation=45)
+				noise3_ax.set_ylim(-0.3,0.3)
+				setlegend(noise3_ax)
+				setlowerticks(noise3_ax)
+			else:
+				setlowerticks(noise2_ax)
 			
 			plot_file.savefig()
 			pl.close()
 		plot_file.close()
-		# pl.show()
 	
 	def transition_occurrence_times(self, simulation_data, smoothing_kernel_width = 200):
 		#defining variables based on indices on y

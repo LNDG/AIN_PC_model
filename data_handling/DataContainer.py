@@ -27,8 +27,8 @@ class DataContainer(object):
 	def __init__(self, hdf5_filename):
 		self.hdf5_filename = hdf5_filename
 		
-	def setup_for_simulation(self, nr_timepoints, nr_simulations, nr_variables):
-		self.result_array = np.zeros((nr_simulations, nr_timepoints, nr_variables))
+	def setup_for_simulation(self, nr_timepoints, nr_simulations, nr_variables, nr_noise):
+		self.result_array = np.zeros((nr_simulations, nr_timepoints, nr_variables + nr_noise))
 		self.parameter_array = []# [np.zeros((nr_simulations, nr_parameters))]
 		self.lock = thread.allocate_lock()
 		self.count = 0
