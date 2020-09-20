@@ -89,14 +89,14 @@ class DataAnalyzer(object):
 
 			# plot noise 
 			noise_idx = nr_variables
-			noise1_ax.set_ylabel('Noise\nStrength', fontsize='small', rotation=45)
+			noise1_ax.set_ylabel('Noise\nStrength', fontsize='small')
 			noise1_ax.tick_params(labelbottom=False)
 			noise1_ax.set_ylim(-0.3,0.3)
 			noise1_ax.plot(self.simulation_data[i,::10,noise_idx], 'r:', alpha = 0.50, label = 'Noise H1')
 			setlegend(noise1_ax)
 
 			noise2_ax.plot(self.simulation_data[i,::10,noise_idx+1], 'g:', alpha = 0.50, label = 'Noise H2')
-			noise2_ax.set_ylabel('Noise\nStrength', fontsize='small', rotation=45)
+			noise2_ax.set_ylabel('Noise\nStrength', fontsize='small')
 			noise2_ax.set_ylim(-0.3,0.3)
 			setlegend(noise2_ax)
 			
@@ -108,7 +108,7 @@ class DataAnalyzer(object):
 			if nr_variables == 5:
 				noise2_ax.tick_params(labelbottom=False)
 				noise3_ax.plot(self.simulation_data[i,::10,noise_idx+2], 'k:', alpha = 0.50, label = 'Noise C')
-				noise3_ax.set_ylabel('Noise\nStrength', fontsize='small', rotation=45)
+				noise3_ax.set_ylabel('Noise\nStrength', fontsize='small')
 				noise3_ax.set_ylim(-0.3,0.3)
 				setlegend(noise3_ax)
 				setlowerticks(noise3_ax)
