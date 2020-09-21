@@ -46,6 +46,32 @@ class DataAnalyzer(object):
 	def __init__(self, data_container):
 		self.data_container = data_container
 	
+	def plotNoiseSpectrum(self, Noise, Fsample, axes, color="r", title=False, xlabel=False):
+		"""
+		Plots a Single-Sided Amplitude Spectrum of Noise with Sampling Frequency Fsample
+		"""
+		n = len(Noise) # length of the Noise
+		k = np.arange(n)
+		T = n/Fsample
+		frq = k/T # two sides frequency range
+		frq = frq[range(int(n/2))] # one side frequency range
+
+		Y = sp.fft(Noise)/n # fft computing and normalization
+		Y = Y[range(int(n/2))]
+		
+		axes.plot(frq,np.abs(Y),color, alpha = 0.50) # plotting the spectrum
+		if title:
+			axes.set_title('Noise Frequency\nSpectrum')
+		
+		if xlabel:
+			axes.set_xlabel('Frequency (Hz)')
+		else:
+			axes.tick_params(labelbottom=False)
+
+		axes.set_ylabel('Power', fontsize='small')
+		axes.yaxis.set_label_position("right")
+		axes.yaxis.tick_right()
+	
 	def plot_activities(self, plot_file_name, nr_variables, run_name, sort_variable = None):
 		self.simulation_parameters, self.simulation_data = self.data_container.data_from_hdf_file(run_name)
 		plot_file = PdfPages(plot_file_name)
@@ -58,15 +84,19 @@ class DataAnalyzer(object):
 		for i in order:
 			fig = pl.figure(figsize = (15, 6))
 			nr_grid = int((nr_variables-2)*2)
-			grid = pl.GridSpec(nr_grid, 1, wspace=0.4, hspace=0.3)
+			grid = pl.GridSpec(nr_grid, 8, wspace=0.4, hspace=0.3)
 			nr_datapoints = self.simulation_data.shape[1]/10
 
 			# create plot grid
-			act_ax = fig.add_subplot(grid[:int(nr_grid/2), 0])
-			noise1_ax = fig.add_subplot(grid[int(nr_grid/2):int(nr_grid/2+1),0])
-			noise2_ax = fig.add_subplot(grid[int(nr_grid/2+1):int(nr_grid/2+2),0])
+			act_ax = fig.add_subplot(grid[:int(nr_grid/2), :6])
+			noise1_ax = fig.add_subplot(grid[int(nr_grid/2):int(nr_grid/2+1),:6])
+			spec1_ax = fig.add_subplot(grid[int(nr_grid/2):int(nr_grid/2+1),6:])
+			noise2_ax = fig.add_subplot(grid[int(nr_grid/2+1):int(nr_grid/2+2),:6])
+			spec2_ax = fig.add_subplot(grid[int(nr_grid/2+1):int(nr_grid/2+2),6:])
 			if nr_variables == 5:
-				noise3_ax = fig.add_subplot(grid[-1,0])
+				noise3_ax = fig.add_subplot(grid[-1,:6])
+				spec3_ax = fig.add_subplot(grid[-1,6:])
+			
 			
 			# plot activity
 			act_ax.set_title('Simulation Results')
@@ -75,7 +105,9 @@ class DataAnalyzer(object):
 			act_ax.plot(self.simulation_data[i,::10,0], 'r', alpha = 0.75, label = 'H1')
 			act_ax.plot(self.simulation_data[i,::10,1], 'g', alpha = 0.75, label = 'H2')
 			if nr_variables == 5:
-				act_ax.plot(self.simulation_data[i,::10,4], 'k', alpha = 0.25, label = 'C') 
+				act_ax2 = act_ax.twinx()
+				act_ax2.set_ylabel('Feedback (C)')
+				act_ax2.plot(self.simulation_data[i,::10,4], 'k', alpha = 0.25, label = 'C') 
 			
 			def setlegend(axes):
 				leg = axes.legend(loc='upper right', fancybox = True)
@@ -94,6 +126,8 @@ class DataAnalyzer(object):
 			noise1_ax.set_ylim(-0.3,0.3)
 			noise1_ax.plot(self.simulation_data[i,::10,noise_idx], 'r:', alpha = 0.50, label = 'Noise H1')
 			setlegend(noise1_ax)
+			# plot freq spec
+			self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx], Fsample=1000, color='r', title=True, axes=spec1_ax)
 
 			noise2_ax.plot(self.simulation_data[i,::10,noise_idx+1], 'g:', alpha = 0.50, label = 'Noise H2')
 			noise2_ax.set_ylabel('Noise\nStrength', fontsize='small')
@@ -112,8 +146,12 @@ class DataAnalyzer(object):
 				noise3_ax.set_ylim(-0.3,0.3)
 				setlegend(noise3_ax)
 				setlowerticks(noise3_ax)
+				# plot freq spec
+				self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx+1], Fsample=1000, color='g',axes=spec2_ax)
+				self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx+2], Fsample=1000, color='k', axes=spec3_ax, xlabel=True)
 			else:
 				setlowerticks(noise2_ax)
+				self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx+1], Fsample=1000, color='g', axes=spec2_ax, xlabel=True)
 			
 			plot_file.savefig()
 			pl.close()

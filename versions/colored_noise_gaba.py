@@ -162,25 +162,3 @@ for noise_nr, noise_color in noise_dict.items():
 	# da.plot_activities(plot_file_name = 'data/act_' + rn + '.pdf', run_name = rn.replace('.',''), sort_variable = which_var)
 	# corr_res[i:] = da.correlation_results[:,0]
 	
-# fig = pl.figure()
-# ax = fig.add_subplot(111)	
-# cax = ax.imshow(corr_res[i], extent = (which_values[0],which_values[-1],inl_range[0],inl_range[-1]), vmin = 0, vmax = 1)
-# cbar = fig.colorbar(cax, ticks=[0, 0.5, 1])
-# cbar.ax.set_yticklabels(['0', '0.5', '1'])# vertically oriented colorbar
-# ax.set_ylabel('inhibition noise level', fontsize=9)
-# ax.set_xlabel('variable inhibition strength', fontsize=9)
-# pl.savefig('data/im_' + str(population_noise_level) + '.pdf')
-
-fig = pl.figure()
-ax = fig.add_subplot(111)	
-for i, cr in enumerate(corr_res):
-	pl.plot(inl_range, cr, 'k', alpha = 0.3 + 0.7 * (i / float(corr_res.shape[0])), linewidth = 0.5 + 2.5 * (i / float(corr_res.shape[0])))
-pl.plot(inl_range, corr_res.mean(axis = 0), 'k--', linewidth = 5. )
-pl.savefig(file_name + '_all.pdf')
-
-from scipy.stats import spearmanr
-print spearmanr(inl_range, corr_res.mean(axis = 0))
-print [spearmanr(inl_range, c) for c in corr_res]
-
-#pl.show()
-shell()
