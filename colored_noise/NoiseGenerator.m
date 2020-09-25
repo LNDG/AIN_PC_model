@@ -1,4 +1,4 @@
-function NoiseVector = NoiseGenerator(stimtime,samplingrate,noisecolour)%,lowcut,highcut,filtorder)
+function NoiseVector = NoiseGenerator(stimtime,samplingrate,noisecolour,lowcut,highcut,filtorder)
 %This function generates noise vectors of different colours of any length and filters them (via butterworth filtering) to any desired frequency range. Douglas Garrett, March 2014.
 %    
     %function NoiseVector = NoiseGenerator(stimtime,samplingrate,noisecolour,lowcut,highcut,filtorder)
@@ -64,11 +64,16 @@ NoiseVector = randn(1, M);
 
 %now filter...use two successive filters here as there seems to be a bug
 %with Matlab's bandpass option.
-%[B,A] = butter(filtorder,lowcut/(samplingrate/2),'high'); 
-%NoiseVector  = filtfilt(B,A,NoiseVector); clear A B;
+[B,A] = butter(filtorder,lowcut/(samplingrate/2),'high'); 
+NoiseVector  = filtfilt(B,A,NoiseVector); clear A B;
 
-%[B,A] = butter(filtorder,highcut/(samplingrate/2),'low');
-%NoiseVector  = filtfilt(B,A,NoiseVector); clear A B
+[B,A] = butter(filtorder,highcut/(samplingrate/2),'low');
+NoiseVector  = filtfilt(B,A,NoiseVector); clear A B
+
+% re-normalise to mean=0 and Stdev=1 to account for filter infleunces on
+% total variance. previous normalization step may thus be unecessary, but
+% need to check on this. Won't hurt though in any case...
+NoiseVector = zscore(NoiseVector);
 
 end
 

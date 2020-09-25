@@ -29,9 +29,6 @@ from DataAnalyzer import DataAnalyzer
 #configurations for the model
 nr_variables = 4 #number of variables in the model
 nr_noise = 2 #number of noise timecourses
-# model parameters
-nr_timepoints = 60000
-simulate=True
 
 def npS( input, mu ):
 	input[input < 0] = 0.0
@@ -86,7 +83,9 @@ def run_sim(mu, nr_timepoints, func, npS):
 	#load noise file 
 	noise_dict = {1:'white', 2:'pink', 3:'blue'}
 	noise_color = noise_dict[mu['noise_color']]
-	noise_file = 'colored_noise/%s_noise.csv' % (noise_color)
+	noise_lowcut = mu['noise_lowcut']
+	noise_highcut = mu['noise_highcut']
+	noise_file = 'colored_noise/%s_noise_%d-%d.csv' % (noise_color, noise_lowcut, noise_highcut)
 	noise = numpy.genfromtxt(noise_file, delimiter=',')
 	noise_tc = numpy.array([[]])
 	iters = 0
@@ -109,7 +108,7 @@ def run_sim(mu, nr_timepoints, func, npS):
 	npS(op[:,0], mu)
 	npS(op[:,1], mu)
 	# join noise values to output 
-	print op.shape, noise_tc.shape
+
 	op = numpy.concatenate((op, noise_tc), axis=1)
 	# return both output and parameter dictionary
 	return [mu, op]
@@ -120,8 +119,8 @@ if not os.path.exists(data_dir):
 plot_dir = 'plots/Colored_Noise_Gaba/'
 if not os.path.exists(plot_dir):
 	os.mkdir(plot_dir)
-file_name = data_dir + 'Colored_Noise'
-plot_name = plot_dir + 'Colored_Noise'
+file_name = data_dir + 'Colored_Noise' + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
+plot_name = plot_dir + 'Colored_Noise' + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
 
 # corr_res = np.zeros((9))
 noise_dict = {1:'white', 2:'pink', 3:'blue'}
@@ -155,8 +154,8 @@ for noise_nr, noise_color in noise_dict.items():
 		job_server.destroy()
 		
 		dc.save_to_hdf_file(run_name = rn)
-	
-		da.plot_activities(plot_file_name = plot_name + rn + '.pdf', nr_variables = nr_variables,run_name = rn, sort_variable = which_var)
+	noise_freq_range = [mu['noise_lowcut'], mu['noise_highcut']]
+	da.plot_activities(plot_file_name = plot_name + rn + '.pdf', nr_variables = nr_variables, run_name = rn, sort_variable = which_var, noise_freq_range=noise_freq_range)
 	
 	# da.all_time_courses_to_percepts(run_name = rn.replace('.',''), sort_variable = which_var, plot_file_name = file_name + '_' + rn + '.pdf')
 	# da.plot_activities(plot_file_name = 'data/act_' + rn + '.pdf', run_name = rn.replace('.',''), sort_variable = which_var)
