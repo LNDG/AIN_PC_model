@@ -75,7 +75,7 @@ class DataAnalyzer(object):
 	def plotHist(self, axes, Noise, color, label, title_suffix):
 		axes.set_title('Noise, ' + title_suffix)
 		#axes.yaxis.tick_right()
-		axes.hist(Noise, bins=20, color=color, label=label, alpha=0.3)
+		axes.hist(Noise, bins=50, color=color, label=label, alpha=0.3)
 		axes.tick_params(labelleft=False, pad=0.5)
 		
 	def plot_activities(self, plot_file_name, nr_variables, run_name, noise_freq_range, sort_variable = None):
@@ -91,7 +91,8 @@ class DataAnalyzer(object):
 			fig = pl.figure(figsize = (15, 6))
 			nr_grid = int((nr_variables-2)*2)
 			grid = pl.GridSpec(nr_grid, 8, wspace=0.4, hspace=0.3)
-			nr_datapoints = self.simulation_data.shape[1]/10
+			nr_datapoints = self.simulation_data.shape[1]
+			seconds = nr_datapoints/1000
 
 			# create plot grid
 			act_ax = fig.add_subplot(grid[:int(nr_grid/2), :6])
@@ -111,12 +112,15 @@ class DataAnalyzer(object):
 			act_ax.set_title('Simulation Results')
 			act_ax.set_ylabel('Activity Strength')
 			act_ax.tick_params(labelbottom=False)
-			act_ax.plot(self.simulation_data[i,::10,0], 'r', alpha = 0.75, label = 'H1')
-			act_ax.plot(self.simulation_data[i,::10,1], 'g', alpha = 0.75, label = 'H2')
+			act_ax.plot(self.simulation_data[i,::,0], 'r', alpha = 0.75, label = 'H1')
+			act_ax.plot(self.simulation_data[i,::,1], 'g', alpha = 0.75, label = 'H2')
 			if nr_variables == 5:
 				act_ax2 = act_ax.twinx()
 				act_ax2.set_ylabel('Feedback (C)')
-				act_ax2.plot(self.simulation_data[i,::10,4], 'k', alpha = 0.25, label = 'C')
+				act_ax2.plot(self.simulation_data[i,::,4], 'k', alpha = 0.25, label = 'C')
+			type(self.simulation_parameters)
+			parameter_string = 'I(1)=' + str(self.simulation_parameters[i][2]) + ' I(2)=' + str(self.simulation_parameters[i][3])
+			act_ax.text(0.8, 0.95, parameter_string)
 
 			# nr switches
 			nr_switches = self.detectswitches(self.simulation_data[i,:,0], self.simulation_data[i,:,1])
@@ -138,12 +142,12 @@ class DataAnalyzer(object):
 			noise1_ax.set_ylabel('Noise\nStrength', fontsize='small')
 			noise1_ax.tick_params(labelbottom=False)
 			noise1_ax.set_ylim(-0.3,0.3)
-			noise1_ax.plot(self.simulation_data[i,::10,noise_idx], 'r:', alpha = 0.50, label = 'Noise H1')
+			noise1_ax.plot(self.simulation_data[i,::,noise_idx], 'r', alpha = 0.50, label = 'Noise H1')
 			setlegend(noise1_ax)
 			# plot freq spec
 			self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx], Fsample=1000, color='r', axes=spec1_ax, noise_freq_range=noise_freq_range)
 
-			noise2_ax.plot(self.simulation_data[i,::10,noise_idx+1], 'g:', alpha = 0.50, label = 'Noise H2')
+			noise2_ax.plot(self.simulation_data[i,::,noise_idx+1], 'g', alpha = 0.50, label = 'Noise H2')
 			noise2_ax.set_ylabel('Noise\nStrength', fontsize='small')
 			noise2_ax.set_ylim(-0.3,0.3)
 			setlegend(noise2_ax)
@@ -151,11 +155,11 @@ class DataAnalyzer(object):
 			def setlowerticks(axes):
 				axes.set_xlabel('Time [Seconds]')
 				axes.set_xticks(np.arange(0,nr_datapoints+1, 1000))
-				axes.set_xticklabels(np.arange(0, nr_datapoints/100+1, 10))
+				axes.set_xticklabels(np.arange(0, seconds+1, 1))
 
 			if nr_variables == 5:
 				noise2_ax.tick_params(labelbottom=False)
-				noise3_ax.plot(self.simulation_data[i,::10,noise_idx+2], 'k:', alpha = 0.50, label = 'Noise C')
+				noise3_ax.plot(self.simulation_data[i,::,noise_idx+2], 'k', alpha = 0.50, label = 'Noise C')
 				noise3_ax.set_ylabel('Noise\nStrength', fontsize='small')
 				noise3_ax.set_ylim(-0.3,0.3)
 				setlegend(noise3_ax)
