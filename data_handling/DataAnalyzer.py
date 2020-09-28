@@ -152,6 +152,8 @@ class DataAnalyzer(object):
 			else:
 				setlowerticks(noise2_ax)
 				self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx+1], Fsample=1000, color='g', axes=spec2_ax, xlabel=True)
+
+
 			
 			plot_file.savefig()
 			pl.close()
