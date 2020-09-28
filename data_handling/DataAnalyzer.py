@@ -10,6 +10,7 @@ Copyright (c) 2011 __MyCompanyName__. All rights reserved.
 import os, sys, pickle, math, thread, time, datetime
 
 import scipy as sp
+import scipy.signal as signal
 import scipy.stats as stats
 import numpy as np
 import matplotlib
@@ -45,8 +46,9 @@ class DataAnalyzer(object):
 	
 	def __init__(self, data_container):
 		self.data_container = data_container
+
 	
-	def plotNoiseSpectrum(self, Noise, Fsample, axes, color="r", title=False, xlabel=False):
+	def plotNoiseSpectrum(self, Noise, Fsample, axes, noise_freq_range, color="r", xlabel=False):
 		"""
 		Plots a Single-Sided Amplitude Spectrum of Noise with Sampling Frequency Fsample
 		"""
@@ -56,12 +58,10 @@ class DataAnalyzer(object):
 		frq = k/T # two sides frequency range
 		frq = frq[range(int(n/2))] # one side frequency range
 
-		Y = sp.fft(Noise)/n # fft computing and normalization
+		Y = sp.fft(Noise) # fft computing and normalization
 		Y = Y[range(int(n/2))]
 		
 		axes.plot(frq,np.abs(Y),color, alpha = 0.50) # plotting the spectrum
-		if title:
-			axes.set_title('Noise Frequency\nSpectrum')
 		
 		if xlabel:
 			axes.set_xlabel('Frequency (Hz)')
@@ -72,27 +72,37 @@ class DataAnalyzer(object):
 		axes.yaxis.set_label_position("right")
 		axes.yaxis.tick_right()
 	
-	def plot_activities(self, plot_file_name, nr_variables, run_name, sort_variable = None):
+	def plotHist(self, axes, Noise, color, label, title_suffix):
+		axes.set_title('Noise, ' + title_suffix)
+		#axes.yaxis.tick_right()
+		axes.hist(Noise, bins=50, color=color, label=label, alpha=0.3)
+		axes.tick_params(labelleft=False, pad=0.5)
+		
+	def plot_activities(self, plot_file_name, nr_variables, run_name, noise_freq_range, sort_variable = None):
 		self.simulation_parameters, self.simulation_data = self.data_container.data_from_hdf_file(run_name)
 		plot_file = PdfPages(plot_file_name)
 		
 		if sort_variable == None:
-			order = range(len(self.parameter_array))
+			self.order = range(len(self.parameter_array))
 		else:
-			order = np.argsort(np.array([p[sort_variable] for p in self.simulation_parameters]))
+			self.order = np.argsort(np.array([p[sort_variable] for p in self.simulation_parameters]))
 			
-		for i in order:
+		for i in self.order:
 			fig = pl.figure(figsize = (15, 6))
 			nr_grid = int((nr_variables-2)*2)
 			grid = pl.GridSpec(nr_grid, 8, wspace=0.4, hspace=0.3)
-			nr_datapoints = self.simulation_data.shape[1]/10
+			nr_datapoints = self.simulation_data.shape[1]
+			seconds = nr_datapoints/1000
 
 			# create plot grid
 			act_ax = fig.add_subplot(grid[:int(nr_grid/2), :6])
 			noise1_ax = fig.add_subplot(grid[int(nr_grid/2):int(nr_grid/2+1),:6])
 			spec1_ax = fig.add_subplot(grid[int(nr_grid/2):int(nr_grid/2+1),6:])
+			hist = fig.add_subplot(grid[:int(nr_grid/2), 6:])
 			noise2_ax = fig.add_subplot(grid[int(nr_grid/2+1):int(nr_grid/2+2),:6])
 			spec2_ax = fig.add_subplot(grid[int(nr_grid/2+1):int(nr_grid/2+2),6:])
+
+
 			if nr_variables == 5:
 				noise3_ax = fig.add_subplot(grid[-1,:6])
 				spec3_ax = fig.add_subplot(grid[-1,6:])
@@ -102,12 +112,20 @@ class DataAnalyzer(object):
 			act_ax.set_title('Simulation Results')
 			act_ax.set_ylabel('Activity Strength')
 			act_ax.tick_params(labelbottom=False)
-			act_ax.plot(self.simulation_data[i,::10,0], 'r', alpha = 0.75, label = 'H1')
-			act_ax.plot(self.simulation_data[i,::10,1], 'g', alpha = 0.75, label = 'H2')
+			act_ax.plot(self.simulation_data[i,::,0], 'r', alpha = 0.75, label = 'H1')
+			act_ax.plot(self.simulation_data[i,::,1], 'g', alpha = 0.75, label = 'H2')
 			if nr_variables == 5:
 				act_ax2 = act_ax.twinx()
 				act_ax2.set_ylabel('Feedback (C)')
-				act_ax2.plot(self.simulation_data[i,::10,4], 'k', alpha = 0.25, label = 'C') 
+				act_ax2.plot(self.simulation_data[i,::,4], 'k', alpha = 0.25, label = 'C')
+			type(self.simulation_parameters)
+			parameter_string = 'I(1)=' + str(self.simulation_parameters[i][2]) + ' I(2)=' + str(self.simulation_parameters[i][3])
+			act_ax.text(0.8, 0.95, parameter_string)
+
+			# nr switches
+			nr_switches = self.detectswitches(self.simulation_data[i,:,0], self.simulation_data[i,:,1])
+			switch_label = "# Switches = %s" % (nr_switches)
+			act_ax.plot([], [], ' ', label=switch_label) 
 			
 			def setlegend(axes):
 				leg = axes.legend(loc='upper right', fancybox = True)
@@ -124,12 +142,12 @@ class DataAnalyzer(object):
 			noise1_ax.set_ylabel('Noise\nStrength', fontsize='small')
 			noise1_ax.tick_params(labelbottom=False)
 			noise1_ax.set_ylim(-0.3,0.3)
-			noise1_ax.plot(self.simulation_data[i,::10,noise_idx], 'r:', alpha = 0.50, label = 'Noise H1')
+			noise1_ax.plot(self.simulation_data[i,::,noise_idx], 'r', alpha = 0.50, label = 'Noise H1')
 			setlegend(noise1_ax)
 			# plot freq spec
-			self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx], Fsample=1000, color='r', title=True, axes=spec1_ax)
+			self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx], Fsample=1000, color='r', axes=spec1_ax, noise_freq_range=noise_freq_range)
 
-			noise2_ax.plot(self.simulation_data[i,::10,noise_idx+1], 'g:', alpha = 0.50, label = 'Noise H2')
+			noise2_ax.plot(self.simulation_data[i,::,noise_idx+1], 'g', alpha = 0.50, label = 'Noise H2')
 			noise2_ax.set_ylabel('Noise\nStrength', fontsize='small')
 			noise2_ax.set_ylim(-0.3,0.3)
 			setlegend(noise2_ax)
@@ -137,46 +155,63 @@ class DataAnalyzer(object):
 			def setlowerticks(axes):
 				axes.set_xlabel('Time [Seconds]')
 				axes.set_xticks(np.arange(0,nr_datapoints+1, 1000))
-				axes.set_xticklabels(np.arange(0, nr_datapoints/100+1, 10))
+				axes.set_xticklabels(np.arange(0, seconds+1, 1))
 
 			if nr_variables == 5:
 				noise2_ax.tick_params(labelbottom=False)
-				noise3_ax.plot(self.simulation_data[i,::10,noise_idx+2], 'k:', alpha = 0.50, label = 'Noise C')
+				noise3_ax.plot(self.simulation_data[i,::,noise_idx+2], 'k', alpha = 0.50, label = 'Noise C')
 				noise3_ax.set_ylabel('Noise\nStrength', fontsize='small')
 				noise3_ax.set_ylim(-0.3,0.3)
 				setlegend(noise3_ax)
 				setlowerticks(noise3_ax)
 				# plot freq spec
 				self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx+1], Fsample=1000, color='g',axes=spec2_ax)
-				self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx+2], Fsample=1000, color='k', axes=spec3_ax, xlabel=True)
+				self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx+2], Fsample=1000, color='k', axes=spec3_ax, xlabel=True, noise_freq_range=noise_freq_range)
 			else:
 				setlowerticks(noise2_ax)
-				self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx+1], Fsample=1000, color='g', axes=spec2_ax, xlabel=True)
-
-
+				self.plotNoiseSpectrum(self.simulation_data[i,:,noise_idx+1], Fsample=1000, color='g', axes=spec2_ax, xlabel=True, noise_freq_range=noise_freq_range)
 			
+			# noise plot hist
+			title_suffix = 'SD = ' + str(np.round(self.simulation_parameters[i][sort_variable],3))
+			self.plotHist(hist, self.simulation_data[i,:,noise_idx], color='r', label='Noise H1', title_suffix=title_suffix)
+			self.plotHist(hist, self.simulation_data[i,:,noise_idx+1], color='g', label='Noise H2', title_suffix=title_suffix)
+			if nr_variables == 5:
+				self.plotHist(hist, self.simulation_data[i,:,noise_idx+2], color='k', label='Noise H2', title_suffix=title_suffix)
+
+			setlegend(hist)
+
 			plot_file.savefig()
 			pl.close()
 		plot_file.close()
+	
+	def detectswitches(self, timecourse1, timecourse2):
+		diff_tc = timecourse1 - timecourse2
+		window = signal.hann(50)
+		smooth_dtc = signal.convolve(diff_tc, window, mode='same') / sum(window)
+		switch_tc = np.abs(np.diff(np.sign(smooth_dtc)))
+		#nr_switches=len(switch_tc[switch_tc!=0])
+		nr_switches = np.sum(switch_tc)/2
+		return nr_switches
 	
 	def transition_occurrence_times(self, simulation_data, smoothing_kernel_width = 200):
 		#defining variables based on indices on y
 		H1, H2 = 0,1
 		A1, A2 = 2,3
-		C = 4
 		
 		from scipy import stats, signal
 		from scipy.stats import spearmanr
 		
 		gauss_pdf = stats.norm.pdf( np.linspace(-4, 4, smoothing_kernel_width) )
 		gauss_pdf = gauss_pdf / gauss_pdf.sum()
+		print gauss_pdf.shape
+
 		difference_time_course = simulation_data[:,H1] - simulation_data[:,H2]
+		print difference_time_course.shape
 		smoothed_dtc = np.zeros((difference_time_course.shape[0] + smoothing_kernel_width))
 		smoothed_dtc[smoothing_kernel_width/2:-smoothing_kernel_width/2] = signal.fftconvolve(difference_time_course, gauss_pdf, 'same')
 		smoothed_dtc = smoothed_dtc[smoothing_kernel_width/2:-smoothing_kernel_width/2]
 		#index
 		idx = np.array(np.abs((np.diff(np.sign(np.insert(smoothed_dtc,0,0)))/2.0))).astype('bool')
-
 		transition_occurrence_times = np.arange(smoothed_dtc.shape[0])[idx]
 		return transition_occurrence_times
 	

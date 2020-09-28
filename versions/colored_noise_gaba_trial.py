@@ -111,7 +111,11 @@ def run_sim(mu, nr_timepoints, func, npS):
 
 	op = numpy.concatenate((op, noise_tc), axis=1)
 	# return both output and parameter dictionary
+
 	return [mu, op]
+
+noise_dict = {1:'white', 2:'pink', 3:'blue'}
+noise_color = noise_dict[mu['noise_color']]
 
 data_dir = 'data/Colored_Noise_Gaba/'
 if not os.path.exists(data_dir):
@@ -119,20 +123,26 @@ if not os.path.exists(data_dir):
 plot_dir = 'plots/Colored_Noise_Gaba/'
 if not os.path.exists(plot_dir):
 	os.mkdir(plot_dir)
-file_name = data_dir + 'Colored_Noise' + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
-plot_name = plot_dir + 'Colored_Noise' + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
 
-# corr_res = np.zeros((9))
-noise_dict = {1:'white', 2:'pink', 3:'blue'}
+file_name = data_dir + 'Colored_Noise_Trial_' + noise_color + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
+if simulate and os.path.exists(file_name+'.hdf5'):
+	print 'Deleting %s.' % (file_name+'.hdf5')
+	os.remove(file_name+'.hdf5')
+
+plot_name = plot_dir + 'Colored_Noise_Trial_' + noise_color + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
+
+XL_range = np.arange(0.8, 1.3, 0.1)
+XR_range = np.ones(XL_range.shape)
 corr_res = np.zeros((len(noise_dict), noise_level_range.shape[0]))
-
-for noise_nr, noise_color in noise_dict.items():
-	mu['noise_color'] = noise_nr
+for XL, XR in zip(XL_range, XR_range):
+	mu['XL'] = XL
+	mu['XR'] = XR
 	which_var = 'noise_level'
 	#which_values = inl_range
-	rn = '_' + noise_color
+	rn = 'XL_' + str(XL).replace('.','') + '_XR_' + str(XR).replace('.','') 
+	print mu
 	
-	print 'running simulation with %s noise.' % (noise_color)
+	print 'running simulation with Input strength %s and %s.' % (str(XL), str(XR))
 	
 	# Create an instance of callback class
 	nr_simulations = noise_level_range.shape[0]
@@ -155,7 +165,7 @@ for noise_nr, noise_color in noise_dict.items():
 		
 		dc.save_to_hdf_file(run_name = rn)
 	noise_freq_range = [mu['noise_lowcut'], mu['noise_highcut']]
-	da.plot_activities(plot_file_name = plot_name + rn + '.pdf', nr_variables = nr_variables, run_name = rn, sort_variable = which_var, noise_freq_range=noise_freq_range)
+	da.plot_activities(plot_file_name = plot_name + '_' + rn + '.pdf', nr_variables = nr_variables, run_name = rn, sort_variable = which_var, noise_freq_range=noise_freq_range)
 	
 	# da.all_time_courses_to_percepts(run_name = rn.replace('.',''), sort_variable = which_var, plot_file_name = file_name + '_' + rn + '.pdf')
 	# da.plot_activities(plot_file_name = 'data/act_' + rn + '.pdf', run_name = rn.replace('.',''), sort_variable = which_var)
