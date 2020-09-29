@@ -1,5 +1,5 @@
 ranges=( "noise_highcut=300" "noise_highcut=400" "noise_highcut=495" )
-color=( "colored_noise_gaba_trial.py" )
+colors=( "noise_color=1" "noise_color=2" "noise_color=3" )
 
 
 for color in "${colors[@]}"; do
