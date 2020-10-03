@@ -1,5 +1,5 @@
 import numpy as np
-simulate=True
+simulate=False
 nr_timepoints=3000
 noise_level_range=np.linspace(0.0025, 0.1, 10) # defines the range of noise level
 noise_lowcut=5
