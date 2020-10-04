@@ -15,7 +15,7 @@ if not os.path.exists(plot_dir):
 # set file_name of hdf5 data file
 hdf5file = data_dir + 'Colored_Noise_Trial_' + noise_color + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
 if simulate and os.path.exists(hdf5file+'.hdf5'):
-	print 'Deleting %s.' % (hdf5file+'.hdf5')
+	print(f'Deleting {hdf5file}.hdf5'))
 	os.remove(hdf5file+'.hdf5')
 
 # set plot file name

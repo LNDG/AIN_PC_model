@@ -68,14 +68,14 @@ class DataContainer(object):
 	
 	def data_from_hdf_file(self, run_name):
 		if not os.path.isfile(self.hdf5_filename):
-			print self.hdf5_filename + ' is  not a file'
+			print(self.hdf5_filename + ' is  not a file')
 		self.h5file = open_file(self.hdf5_filename, mode = "r")
 		
 		try:
 			thisRunGroup = self.h5file.get_node(where = "/", name = run_name, classname='Group')
 		except NoSuchNodeError:
 			# import actual data
-			print run_name + ' is not a run in ' + self.hdf5_filename
+			print(run_name + ' is not a run in ' + self.hdf5_filename)
 			return (None, None)
 		
 		simulation_parameters, simulation_data = thisRunGroup.simulation_parameters.read(), thisRunGroup.simulation_data.read()

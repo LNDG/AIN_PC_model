@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# encoding: utf-8
 """
 EyeLinkSession.py
 
@@ -11,38 +9,21 @@ import os, sys, pickle, math, thread, time
 from subprocess import *
 sys.path.append('/home/mpib/kamp/LNDG/Noise_Color_Attractor_Model/data_handling')
 
-import scipy as sp
-import scipy.stats as stats
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib.backends.backend_pdf import PdfPages
-import matplotlib.pylab as pl
-from IPython import embed as shell
-
 from tables import *
-import pp
-from model_config import *
-from DataContainer import DataContainer
-from DataAnalyzer import DataAnalyzer
-from colored_noise.create_noise import load_noise
 
-#configurations for the model
-nr_variables = 4 #number of variables in the model
-nr_noise = 2 #number of noise timecourses
-
-def npS(input, model):
+def npS(input, params):
 	"""""
 	Naka Rushton Function
 	"""""
     input[input < 0] = 0.0
-    input = pow(input,model.params['NRa'])/(pow(input,model.params['NRa']) + pow(model.params['NRs'],model.params['NRa']))
+    input = pow(input,params['NRa'])/(pow(input,params['NRa']) + pow(params['NRs'],params['NRa']))
 
 def integrate_model(model):
 	import pygsl._numobj
 	import pygsl
 	from pygsl import odeiv, Float
-	import numpy
+	import numpy as np
 
 	step = odeiv.step_rkf45(model.params['dimension'], model.func, None) # Embedded 4th order Runge-Kutta-Fehlberg method with 5th order error estimate. 
 	control = odeiv.control_y_new(step, 1e-6, 1e-6)
@@ -52,29 +33,29 @@ def integrate_model(model):
 	t1 = float(model.params['nr_timepoints'])
 
     y = model.init_values
-	op = numpy.zeros((model.params['nr_timepoints'], dimension))
+	op = np.zeros((model.params['nr_timepoints'], dimension))
 	
     noise = model.noise
-	noise_tc = numpy.array([[]])
+	noise_tc = np.array([[]])
 	iters = 0
-	for t in numpy.linspace(0, t1, model.params['nr_timepoints']):
+	for t in np.linspace(0, t1, model.params['nr_timepoints']):
 		t, h, y = evolve.apply(t, t1, h, y)
 		op[iters] = y
 		# add colored noise to instantaneous activity:
 		y += model.create_noise_step(iters)
 		if iters == 0:
-			noise_tc = noise_step[numpy.newaxis,[0,1]]
+			noise_tc = noise_step[np.newaxis,[0,1]]
 		else:
-			noise_tc = numpy.concatenate((noise_tc, noise_step[numpy.newaxis,[0,1]]), axis=0)		
+			noise_tc = np.concatenate((noise_tc, noise_step[np.newaxis,[0,1]]), axis=0)		
 		iters += 1
 	
-	op = numpy.array(op)
+	op = np.array(op)
 	
 	# naka rushton on activities:
-	npS(op[:,0], mu)
-	npS(op[:,1], mu)
+	npS(op[:,0], model.params)
+	npS(op[:,1], model.params)
 	# join noise values to output 
-	op = numpy.concatenate((op, noise_tc), axis=1)
+	op = np.concatenate((op, noise_tc), axis=1)
 	# return both output and parameter dictionary
 	return [model.params, op]
 
@@ -94,6 +75,8 @@ def run_parallel_integration(model, variable, variable_range, hdf5file, hdf5node
 	Function to run simulation in parallel over a range of values of one variable 
 	"""""
 	from joblib import Parallel, delayed
+	from DataContainer import DataContainer
+
 	nr_simulations = variable_range.shape[0]
 	# Create an instance of data container class
 	dc = DataContainer(hdf5file + '.hdf5')
