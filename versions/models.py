@@ -3,16 +3,16 @@ class model():
     def __init__(self):
         # set default parameters for all models
         self.params = {'nr_timepoints':3000, 'XL': 1.0, 'XR': 1.0, 'gamma': 3.25, 'exponent': 1.0, 'alpha': 1.75, 'tau': 100.0, 'NRa': 2.0, 'NRs': 1.0}
-        self.noise_params = {'lowcut': 5, 'highcut': 300, 'nr_color': 1, 'level':0.001}
+        self.noise_params = {'lowcut': 5, 'highcut': 300, 'nr_color': 1, 'noise_level':0.001}
     
 class gaba(model):
     def __init__(self):
         # load and update general parameter settings
         super().__init__()
-        self.params.update({'dimension': 4}) 
-        self.noise_params.update({'nr_noise_traces':2})
+        self.params.update({'dimension':4}) 
+        self.noise_params.update({'nr_noise_tc':2})
         
-        from colored_noise.create_noise import load_noise
+        from colored_noise.noise import load_noise
         self.noise = load_noise(self.noise_params)
 
 	    # initial values

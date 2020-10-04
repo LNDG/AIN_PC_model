@@ -1,25 +1,14 @@
-#!/usr/bin/env python
-# encoding: utf-8
 """
-EyeLinkSession.py
-
 Created by Tomas Knapen on 2011-04-27.
 Copyright (c) 2011 __MyCompanyName__. All rights reserved.
 """
 
-import os, sys, pickle, math, thread, time, datetime
-from subprocess import *
-
-import scipy as sp
-import scipy.stats as stats
+import os, thread, time, datetime
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pylab as pl
-
-# from IPython import embed as shell
-
 from tables import *
 
 #class for callbacks
@@ -29,13 +18,13 @@ class DataContainer(object):
 		
 	def setup_for_simulation(self, nr_timepoints, nr_simulations, nr_variables, nr_noise):
 		self.result_array = np.zeros((nr_simulations, nr_timepoints, nr_variables + nr_noise))
-		self.parameter_array = []# [np.zeros((nr_simulations, nr_parameters))]
+		self.parameter_array = []
 		self.lock = thread.allocate_lock()
 		self.count = 0
 
 	#the callback function
 	def save_to_array(self, value):
-		# we must use lock here because array stuff is not atomic (?)
+		# we must use lock here because array stuff is not atomic
 		self.lock.acquire()
 		self.parameter_array.append( value[0] )
 		self.result_array[self.count] = value[1]
@@ -90,7 +79,6 @@ class DataContainer(object):
 			return (None, None)
 		
 		simulation_parameters, simulation_data = thisRunGroup.simulation_parameters.read(), thisRunGroup.simulation_data.read()
-		# shell()
 		self.h5file.close()
 		
 		return (simulation_parameters, simulation_data)

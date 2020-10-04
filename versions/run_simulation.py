@@ -1,133 +1,56 @@
-#!/usr/bin/env python
-# encoding: utf-8
-"""
-EyeLinkSession.py
+# script to run simulation
+from versions.models import *
+from versions.parellel_integration import *
 
-Created by Tomas Knapen on 2011-04-27.
-Copyright (c) 2011 __MyCompanyName__. All rights reserved.
-"""
+simulate = True # set to false to only generate new plots
 
-import os, sys, pickle, math, thread, time
-from subprocess import *
-sys.path.append('/home/mpib/kamp/LNDG/Noise_Color_Attractor_Model/data_handling')
-
-import scipy as sp
-import scipy.stats as stats
-import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib.backends.backend_pdf import PdfPages
-import matplotlib.pylab as pl
-from IPython import embed as shell
-
-from tables import *
-import pp
-from model_config import *
-from DataContainer import DataContainer
-from DataAnalyzer import DataAnalyzer
-from colored_noise.create_noise import load_noise
-
-#configurations for the model
-nr_variables = 4 #number of variables in the model
-nr_noise = 2 #number of noise timecourses
-
-def npS(input, model):
-    input[input < 0] = 0.0
-    input = pow(input,model.params['NRa'])/(pow(input,model.params['NRa']) + pow(model.params['NRs'],model.params['NRa']))
-
-def integrate_model(model):
-	import pygsl._numobj
-	import pygsl
-	from pygsl import odeiv, Float
-	import numpy
-
-	step = odeiv.step_rkf45(model.params['dimension'], model.func, None) # Embedded 4th order Runge-Kutta-Fehlberg method with 5th order error estimate. 
-	control = odeiv.control_y_new(step, 1e-6, 1e-6)
-	evolve= odeiv.evolve(step, control, model.params['dimension'])
-	
-	h = 1
-	t1 = float(model.params['nr_timepoints'])
-
-    y = model.init_values
-	op = numpy.zeros((model.params['nr_timepoints'], dimension))
-	
-    noise = load_noise(model.noise_params)
-	noise_tc = numpy.array([[]])
-	iters = 0
-	for t in numpy.linspace(0, t1, model.params['nr_timepoints']):
-		t, h, y = evolve.apply(t, t1, h, y)
-		op[iters] = y
-		# add colored noise to instantaneous activity:
-		y += model.create_noise_step(iters)
-		if iters == 0:
-			noise_tc = noise_step[numpy.newaxis,[0,1]]
-		else:
-			noise_tc = numpy.concatenate((noise_tc, noise_step[numpy.newaxis,[0,1]]), axis=0)		
-		iters += 1
-	
-	op = numpy.array(op)
-	
-	# naka rushton on activities:
-	npS(op[:,0], mu)
-	npS(op[:,1], mu)
-	# join noise values to output 
-	op = numpy.concatenate((op, noise_tc), axis=1)
-	# return both output and parameter dictionary
-	return [model.params, op]
-
-def run_parallel_sim(model, variable, variable_range)
-
-noise_dict = {1:'white', 2:'pink', 3:'blue'}
-noise_color = noise_dict[mu['noise_color']]
-
-data_dir = 'data/Colored_Noise_Gaba/'
+# define directories for simulated data and plots
+data_dir = 'data/testing'
 if not os.path.exists(data_dir):
 	os.mkdir(data_dir)
-plot_dir = 'plots/Colored_Noise_Gaba/'
+plot_dir = 'plots/testing'
 if not os.path.exists(plot_dir):
 	os.mkdir(plot_dir)
 
-file_name = data_dir + 'Colored_Noise_Trial_' + noise_color + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
-if simulate and os.path.exists(file_name+'.hdf5'):
-	print 'Deleting %s.' % (file_name+'.hdf5')
-	os.remove(file_name+'.hdf5')
+# set file_name of hdf5 data file
+hdf5file = data_dir + 'Colored_Noise_Trial_' + noise_color + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
+if simulate and os.path.exists(hdf5file+'.hdf5'):
+	print 'Deleting %s.' % (hdf5file+'.hdf5')
+	os.remove(hdf5file+'.hdf5')
 
-plot_name = plot_dir + 'Colored_Noise_Trial_' + noise_color + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
+# set plot file name
+pdffile = plot_dir + 'Colored_Noise_Trial_' + noise_color + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
 
-XL_range = np.arange(0.8, 1.3, 0.1)
-XR_range = np.ones(XL_range.shape)
-corr_res = np.zeros((len(noise_dict), noise_level_range.shape[0]))
-for XL, XR in zip(XL_range, XR_range):
-	mu['XL'] = XL
-	mu['XR'] = XR
-	which_var = 'noise_level'
-	#which_values = inl_range
-	rn = 'XL_' + str(XL).replace('.','') + '_XR_' + str(XR).replace('.','') 
-	print mu
+# set up model
+model = gaba()
+
+# set up for loop over run variable
+run_range = np.arange(0.8, 1.3, 0.1)
+run_variable = 'XL'
+
+def create_runname(**kwargs): 
+	for 
+
+for run_value in run_range:
+	model.params[run_variable] = run_value
+	run_name = f'{run_variable}_{str(run_value).replace('.','')}'
+	hdfnode = run_name
+
+	print(f'running simulation for run variable {run_variable} = {run_value}')
 	
-	print 'running simulation with Input strength %s and %s.' % (str(XL), str(XR))
-	
+	# variable for parallel simulation
+	parallel_var = 'noise_level'
+	parallel_range=np.arange(0.0025, 0.1, 0.0025) # defines the range of noise level
+
 	# Create an instance of callback class
 	nr_simulations = noise_level_range.shape[0]
-	dc = DataContainer(file_name + '.hdf5')
-	da = DataAnalyzer(dc)
-	
+	dc = DataContainer(hdf5file + '.hdf5')
+
+	# Run simulation
 	if simulate:
-		dc.setup_for_simulation(nr_timepoints = model.params['nr_timepoints'], nr_simulations = nr_simulations, nr_variables = nr_variables, nr_noise = nr_noise)
-		# running these in parallel
-		# Creates jobserver with automatically detected number of workers
-		job_server = pp.Server(ppservers=())
-
-		# Execute the same task with different amount of active workers and measure the time
-		for noise_level in noise_level_range:
-			mu['noise_level'] = noise_level
-			job_server.submit(run_sim, (model, npS), callback=dc.save_to_array)
-		#wait for jobs in all groups to finish 
-		job_server.wait()
-		job_server.destroy()
-		
-		dc.save_to_hdf_file(run_name = rn)
-	noise_freq_range = [mu['noise_lowcut'], mu['noise_highcut']]
-	da.plot_activities(plot_file_name = plot_name + '_' + rn + '.pdf', nr_variables = nr_variables, run_name = rn, sort_variable = which_var, noise_freq_range=noise_freq_range)
-
+		run_parallel_integration(model, parallel_var, parallel_range, hdf5file, hdf5node)
 	
+	# Create instance of data analyzer
+	da = DataAnalyzer(dc)
+	noise_freq_range = [model.noise_params['lowcut'], model.noise_params['highcut']]
+	da.plot_activities(plot_file_name = pdffile + '_' + run_name + '.pdf', nr_variables = model.params['dimension'], run_name = run_name, sort_variable = parallel_var, noise_freq_range=noise_freq_range)

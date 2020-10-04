@@ -1,4 +1,4 @@
-# AIN_PC_model
+# Noise Color Attractor Model
 
 Python project that implements a dynamical systems model to simulate bistable perception.
 
