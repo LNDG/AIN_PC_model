@@ -7,7 +7,7 @@ Created by Tomas Knapen on 2011-04-27.
 Copyright (c) 2011 __MyCompanyName__. All rights reserved.
 """
 
-import os, sys, pickle, math, thread, time, datetime
+import os, sys, pickle, math, _thread, time, datetime
 
 import scipy as sp
 import scipy.signal as signal
@@ -203,10 +203,10 @@ class DataAnalyzer(object):
 		
 		gauss_pdf = stats.norm.pdf( np.linspace(-4, 4, smoothing_kernel_width) )
 		gauss_pdf = gauss_pdf / gauss_pdf.sum()
-		print gauss_pdf.shape
+		print(gauss_pdf.shape)
 
 		difference_time_course = simulation_data[:,H1] - simulation_data[:,H2]
-		print difference_time_course.shape
+		print(difference_time_course.shape)
 		smoothed_dtc = np.zeros((difference_time_course.shape[0] + smoothing_kernel_width))
 		smoothed_dtc[smoothing_kernel_width/2:-smoothing_kernel_width/2] = signal.fftconvolve(difference_time_course, gauss_pdf, 'same')
 		smoothed_dtc = smoothed_dtc[smoothing_kernel_width/2:-smoothing_kernel_width/2]
