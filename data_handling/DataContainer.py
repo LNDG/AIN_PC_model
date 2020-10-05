@@ -3,7 +3,7 @@ Created by Tomas Knapen on 2011-04-27.
 Copyright (c) 2011 __MyCompanyName__. All rights reserved.
 """
 
-import os, thread, time, datetime
+import os, _thread, time, datetime
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -19,7 +19,7 @@ class DataContainer(object):
 	def setup_for_simulation(self, nr_timepoints, nr_simulations, nr_variables, nr_noise):
 		self.result_array = np.zeros((nr_simulations, nr_timepoints, nr_variables + nr_noise))
 		self.parameter_array = []
-		self.lock = thread.allocate_lock()
+		self.lock = _thread.allocate_lock()
 		self.count = 0
 
 	#the callback function
