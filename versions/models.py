@@ -19,7 +19,7 @@ class gaba(model):
 		import pygsl._numobj
 		self.init_values = pygsl._numobj.array((0.5, 0.5, 0., 0.))
 	
-	def func(t, y):
+	def func(self, t, y):
 		import pygsl._numobj
 		from pygsl import odeiv, Float
 		
