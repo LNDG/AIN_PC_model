@@ -1,6 +1,8 @@
 # script to run simulation
 from versions.models import *
 from versions.parellel_integration import *
+from data_handling.DataContainer import DataContainer
+from data_handling.DataAnalyzer import DataAnalyzer
 
 simulate = True # set to false to only generate new plots
 
