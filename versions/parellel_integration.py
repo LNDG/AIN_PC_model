@@ -33,7 +33,7 @@ def integrate_model(model):
 	t1 = float(model.params['nr_timepoints'])
 
 	y = model.init_values
-	op = np.zeros((model.params['nr_timepoints'], dimension))
+	op = np.zeros((model.params['nr_timepoints'], model.noise_params['dimension']))
 	
 	noise = model.noise
 	noise_tc = np.array([[]])
