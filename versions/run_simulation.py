@@ -18,13 +18,13 @@ color_dict = {1:'white', 2:'pink', 3:'blue'}
 noise_color = color_dict[model.noise_params['nr_color']]
 
 # set file_name of hdf5 data file
-hdf5file = data_dir + 'Colored_Noise_' + noise_color + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
+hdf5file = data_dir + 'Colored_Noise_' + noise_color + '_' + str(model.noise_params['lowcut']) + '-' + str(model.noise_params['highcut'])
 if simulate and os.path.exists(hdf5file+'.hdf5'):
 	print(f'Deleting {hdf5file}.hdf5')
 	os.remove(hdf5file+'.hdf5')
 
 # set plot file name
-pdffile = plot_dir + 'Colored_Noise_Trial_' + noise_color + '_' + str(noise_lowcut) + '-' + str(noise_highcut)
+pdffile = plot_dir + 'Colored_Noise_Trial_' + noise_color + '_' + str(model.noise_params['lowcut']) + '-' + str(model.noise_params['highcut'])
 
 # set up for loop over run variable
 run_range = np.arange(0.8, 1.3, 0.1)
