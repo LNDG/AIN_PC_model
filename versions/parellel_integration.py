@@ -5,7 +5,7 @@ Created by Tomas Knapen on 2011-04-27.
 Copyright (c) 2011 __MyCompanyName__. All rights reserved.
 """
 
-import os, sys, pickle, math, thread, time
+import os, sys, pickle, math, threading, time
 from subprocess import *
 sys.path.append('/home/mpib/kamp/LNDG/Noise_Color_Attractor_Model/data_handling')
 
@@ -16,8 +16,8 @@ def npS(input, params):
 	"""""
 	Naka Rushton Function
 	"""""
-    input[input < 0] = 0.0
-    input = pow(input,params['NRa'])/(pow(input,params['NRa']) + pow(params['NRs'],params['NRa']))
+	input[input < 0] = 0.0
+	input = pow(input,params['NRa'])/(pow(input,params['NRa']) + pow(params['NRs'],params['NRa']))
 
 def integrate_model(model):
 	import pygsl._numobj
@@ -32,10 +32,10 @@ def integrate_model(model):
 	h = 1
 	t1 = float(model.params['nr_timepoints'])
 
-    y = model.init_values
+	y = model.init_values
 	op = np.zeros((model.params['nr_timepoints'], dimension))
 	
-    noise = model.noise
+	noise = model.noise
 	noise_tc = np.array([[]])
 	iters = 0
 	for t in np.linspace(0, t1, model.params['nr_timepoints']):
