@@ -42,7 +42,7 @@ for run_value in run_range:
 	parallel_range=np.arange(0.0025, 0.1, 0.0025) # defines the range of noise level
 
 	# Create an instance of callback class
-	nr_simulations = noise_level_range.shape[0]
+	nr_simulations = parallel_range.shape[0]
 	dc = DataContainer(hdf5file + '.hdf5')
 
 	# Run simulation
