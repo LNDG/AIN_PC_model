@@ -35,7 +35,7 @@ run_variable = 'XL'
 for run_value in run_range:
 	model.params[run_variable] = run_value
 	run_name = run_variable + '_' + str(run_value).replace('.','')
-	hdfnode = run_name
+	hdf5node = run_name
 
 	print(f'running simulation for run variable {run_variable} = {run_value}')
 	
