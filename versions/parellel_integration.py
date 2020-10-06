@@ -10,16 +10,16 @@ from data_handling.DataContainer import DataContainer
 from colored_noise.noise import *
 
 def npS(input, params):
-	"""""
+	"""
 	Naka Rushton Function
-	"""""
+	"""
 	input[input < 0] = 0.0
 	input = pow(input,params['NRa'])/(pow(input,params['NRa']) + pow(params['NRs'],params['NRa']))
 
 def integrate_model(func, params):
-	""""
+	"""
 	Function to integrate the model ode using the pygsl library
-	""""
+	"""
 	# set up pygsl
 	step = odeiv.step_rkf45(params['dimension'], func, None, params) # Embedded 4th order Runge-Kutta-Fehlberg method with 5th order error estimate. 
 	control = odeiv.control_y_new(step, 1e-6, 1e-6)
@@ -56,17 +56,17 @@ def integrate_model(func, params):
 	return [params, op]
 
 def params_generator(params, variable, variable_range):
-	""""
+	"""
 	Generator to update model parameters in each iteration
-	""""
+	"""
 	assert (variable in params.keys()), 'Variable not found.'	
 	for v in variable_range:
 		yield params.update({variable: v})		
 
 def run_parallel_integration(func, params, variable, variable_range, hdf5file, hdf5node):
-	"""""
+	"""
 	Function to run simulation in parallel over a range of values of one variable 
-	"""""
+	"""
 	nr_simulations = variable_range.shape[0]
 	# Create an instance of data container class
 	dc = DataContainer(hdf5file + '.hdf5')

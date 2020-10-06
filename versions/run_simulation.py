@@ -1,5 +1,5 @@
 # script to run simulation
-from versions.models import *
+from versions.gaba import *
 from versions.parellel_integration import *
 # choose model 
 from versions.gaba import *
@@ -18,17 +18,17 @@ if not os.path.exists(plot_dir):
 
 # set up model parameter
 color_dict = {1:'white', 2:'pink', 3:'blue'}
-noise_color = color_dict[params['nr_color']]
 params = create_params()
+noise_color = color_dict[params['nr_color']]
 
 # set file_name of hdf5 data file
-hdf5file = data_dir + 'Colored_Noise_' + noise_color + '_' + str(params['lowcut']) + '-' + str(params['highcut'])
+hdf5file = data_dir + 'Colored_Noise_' + noise_color + '_' + str(params['noise_lowcut']) + '-' + str(params['noise_highcut'])
 if simulate and os.path.exists(hdf5file+'.hdf5'):
 	print(f'Deleting {hdf5file}.hdf5')
 	os.remove(hdf5file+'.hdf5')
 
 # set plot file name
-pdffile = plot_dir + 'Colored_Noise_Trial_' + noise_color + '_' + str(params['lowcut']) + '-' + str(params['highcut'])
+pdffile = plot_dir + 'Colored_Noise_Trial_' + noise_color + '_' + str(params['noise_lowcut']) + '-' + str(params['noise_highcut'])
 
 # set up for loop over run variable
 run_range = np.arange(0.8, 1.3, 0.1)
