@@ -1,8 +1,7 @@
 # script to run simulation
-from versions.gaba import *
 from versions.parellel_integration import *
 # choose model 
-from versions.gaba import *
+import versions.gaba as model
 from data_handling.DataContainer import DataContainer
 from data_handling.DataAnalyzer import DataAnalyzer
 
@@ -18,7 +17,7 @@ if not os.path.exists(plot_dir):
 
 # set up model parameter
 color_dict = {1:'white', 2:'pink', 3:'blue'}
-params = create_params()
+params = model.create_params()
 noise_color = color_dict[params['nr_color']]
 
 # set file_name of hdf5 data file
@@ -51,7 +50,7 @@ for run_value in run_range:
 
 	# Run simulation
 	if simulate:
-		run_parallel_integration(func, params, parallel_var, parallel_range, hdf5file, hdf5node)
+		parallel.run_integration(model.func, params, parallel_var, parallel_range, hdf5file, hdf5node)
 	
 	# Create instance of data analyzer
 	da = DataAnalyzer(dc)

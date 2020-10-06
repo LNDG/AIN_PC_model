@@ -7,7 +7,7 @@ import pygsl
 from pygsl import odeiv, Float
 from joblib import Parallel, delayed
 from data_handling.DataContainer import DataContainer
-from colored_noise.noise import *
+from colored_noise.noise import noise
 
 def npS(input, params):
 	"""
@@ -63,7 +63,7 @@ def params_generator(params, variable, variable_range):
 	for v in variable_range:
 		yield params.update({variable: v})		
 
-def run_parallel_integration(func, params, variable, variable_range, hdf5file, hdf5node):
+def run_integration(func, params, variable, variable_range, hdf5file, hdf5node):
 	"""
 	Function to run simulation in parallel over a range of values of one variable 
 	"""
