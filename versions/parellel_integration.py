@@ -1,12 +1,10 @@
 import os, sys, pickle, math, threading, time
-from subprocess import *
 import numpy as np
-from tables import *
 import pygsl._numobj
-import pygsl
 from pygsl import odeiv, Float
 from joblib import Parallel, delayed
 from data_handling.DataContainer import DataContainer
+from run_simulation import model
 from colored_noise.noise import noise
 
 def npS(input, params):
@@ -16,7 +14,7 @@ def npS(input, params):
 	input[input < 0] = 0.0
 	input = pow(input,params['NRa'])/(pow(input,params['NRa']) + pow(params['NRs'],params['NRa']))
 
-def integrate_model(func, params):
+def integrate_model(func, params, init_values):
 	"""
 	Function to integrate the model ode using the pygsl library
 	"""
@@ -63,9 +61,9 @@ def params_generator(params, variable, variable_range):
 	for v in variable_range:
 		yield params.update({variable: v})		
 
-def run_integration(func, params, variable, variable_range, hdf5file, hdf5node):
+def run_integration(func, params, init_values, variable, variable_range, hdf5file, hdf5node):
 	"""
-	Function to run simulation in parallel over a range of values of one variable 
+	Function to run simulation in parallel over a range of values of one variable. Safes simulation result to hdf5 file.
 	"""
 	nr_simulations = variable_range.shape[0]
 	# Create an instance of data container class
@@ -73,6 +71,6 @@ def run_integration(func, params, variable, variable_range, hdf5file, hdf5node):
 	dc.setup_for_simulation(nr_timepoints = params['nr_timepoints'], nr_simulations = nr_simulations, 
 											nr_variables = params['dimension'], nr_noise = params['nr_noise_tc'])
 	# running these in parallel
-	Parallel(n_jobs=nr_simulations)(delayed(dc.save_to_array)(integrate_model(func, params)) for _ in params_generator(params, variable, variable_range))
+	Parallel(n_jobs=nr_simulations)(delayed(dc.save_to_array)(integrate_model(func, params, init_values)) for _ in params_generator(params, variable, variable_range))
 	dc.save_to_hdf_file(run_name = hdf5node)
 	

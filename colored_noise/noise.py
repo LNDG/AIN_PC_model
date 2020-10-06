@@ -1,6 +1,10 @@
+import numpy as np
+
 class noise(): 
+    """
+    Class to handle noise which is added to model
+    """
     def __init__(self, params): 
-        import numpy as np
         self.params = params
         noise_dict = {1:'white', 2:'pink', 3:'blue'}
         noise_color = noise_dict[params['nr_color']]
@@ -23,5 +27,4 @@ class noise():
         for tc in range(self.params['nr_noise_tc']):
             step[tc] = self.traces[tc, iters] * self.params['noise_level']
         return step
-
 
