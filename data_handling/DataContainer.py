@@ -25,15 +25,18 @@ class DataContainer(object):
 	#the callback function
 	def save_to_array(self, value):
 		# we must use lock here because array stuff is not atomic
-		self.lock.acquire()
+		# self.lock.acquire()
 		self.parameter_array.append( value[0] )
 		self.result_array[self.count] = value[1]
-		self.lock.release()
+		# self.lock.release()
 		self.count += 1
 	
-	def save_to_hdf_file(self, run_name, add_to_file = True):
+	def save_to_hdf_file(self, run_name, sim_results, add_to_file = True):
 		# saving the data
-		
+		parameter, results = zip(*sim_results) 
+		self.parameter_array = parameter
+		self.result_array = np.array(results)
+
 		if os.path.isfile(self.hdf5_filename) and add_to_file:
 			# os.system('rm ' + self.hdf5_filename)
 			h5file = open_file(self.hdf5_filename, mode = "r+", title = "simulation results file")
@@ -51,7 +54,7 @@ class DataContainer(object):
 			thisRunGroup = h5file.create_group("/", run_name, run_name + ' created at ' + now.strftime("%Y-%m-%d_%H.%M.%S"))
 		h5file.create_array(thisRunGroup, 'simulation_data', self.result_array, '')
 		
-		ptd = [(k, np.float64) for k in np.unique(np.concatenate([k.keys() for k in self.parameter_array]))]
+		ptd = [(k, np.float64) for k in np.unique(np.concatenate(([list(k.keys()) for k in self.parameter_array])))]
 		self.parameterTypeDictionary = np.dtype(ptd)
 		
 		# create a table for the parameters of these runs

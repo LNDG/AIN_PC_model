@@ -1,6 +1,9 @@
-# choose model 
-import versions.gaba as model
+import numpy as np
+import os, sys
+sys.path.append('/home/mpib/kamp/LNDG/Noise_Color_Attractor_Model')
 import versions.parellel_integration as parallel
+from versions.config import model_name
+model = __import__(model_name)
 from data_handling.DataContainer import DataContainer
 from data_handling.DataAnalyzer import DataAnalyzer
 
@@ -41,7 +44,7 @@ for run_value in run_range:
 	
 	# variable for parallel simulation
 	parallel_var = 'noise_level'
-	parallel_range=np.arange(0.0025, 0.1, 0.0025) # defines the range of noise level
+	parallel_range=np.arange(0.0025, 0.1, 0.05) # defines the range of noise level
 
 	# Create an instance of callback class
 	nr_simulations = parallel_range.shape[0]
@@ -53,4 +56,5 @@ for run_value in run_range:
 	
 	# Create instance of data analyzer
 	da = DataAnalyzer(dc)
+	noise_freq_range = [params['noise_lowcut'], params['noise_highcut']]
 	da.plot_activities(plot_file_name = pdffile + '_' + run_name + '.pdf', nr_variables = params['dimension'], run_name = run_name, sort_variable = parallel_var, noise_freq_range=noise_freq_range)
