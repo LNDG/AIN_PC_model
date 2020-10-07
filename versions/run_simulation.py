@@ -2,8 +2,8 @@ import numpy as np
 import os, sys
 sys.path.append('/home/mpib/kamp/LNDG/Noise_Color_Attractor_Model')
 import versions.parellel_integration as parallel
-from versions.config import model_name
-model = __import__(model_name)
+import versions.config as config
+model = __import__(config.model_name)
 from data_handling.DataContainer import DataContainer
 from data_handling.DataAnalyzer import DataAnalyzer
 
@@ -23,28 +23,29 @@ params, init_values = model.set_up()
 noise_color = color_dict[params['nr_color']]
 
 # set file_name of hdf5 data file
-hdf5file = data_dir + 'Colored_Noise_' + noise_color + '_' + str(params['noise_lowcut']) + '-' + str(params['noise_highcut'])
+hdf5file = os.path.join(data_dir, 'Colored_Noise_' + noise_color + '_' + str(params['noise_lowcut']) + '-' + str(params['noise_highcut']))
 if simulate and os.path.exists(hdf5file+'.hdf5'):
 	print(f'Deleting {hdf5file}.hdf5')
 	os.remove(hdf5file+'.hdf5')
 
 # set plot file name
-pdffile = plot_dir + 'Colored_Noise_Trial_' + noise_color + '_' + str(params['noise_lowcut']) + '-' + str(params['noise_highcut'])
+pdffile = os.path.join(plot_dir, 'Colored_Noise_Trial_' + noise_color + '_' + str(params['noise_lowcut']) + '-' + str(params['noise_highcut']))
 
-# set up for loop over run variable
-run_range = np.arange(0.8, 1.3, 0.1)
-run_variable = 'XL'
+# set up parameter grid
+from sklearn.model_selection import ParameterGrid
+param_grid = ParameterGrid(config.param_grid)
 
-for run_value in run_range:
-	params[run_variable] = run_value
-	run_name = run_variable + '_' + str(run_value).replace('.','')
+for p in param_grid:
+	params.update(p)
+	s = '_'
+	run_name = s.join([str(val).replace('.','') for item in p.items() for val in item]) # creates run-name
 	hdf5node = run_name
 
-	print(f'running simulation for run variable {run_variable} = {run_value}')
+	print(f'running simulation for run parameter set {p}')
 	
 	# variable for parallel simulation
-	parallel_var = 'noise_level'
-	parallel_range=np.arange(0.0025, 0.1, 0.05) # defines the range of noise level
+	parallel_var = config.parallel_var
+	parallel_range= config.parallel_range
 
 	# Create an instance of callback class
 	nr_simulations = parallel_range.shape[0]
