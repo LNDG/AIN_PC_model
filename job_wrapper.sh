@@ -1,14 +1,14 @@
-ranges=( "noise_highcut=300" "noise_highcut=400" "noise_highcut=495" )
-colors=( "noise_color=1" "noise_color=2" "noise_color=3" )
+limits=( "'noise_highcut':300" "'noise_highcut':400" )
+colors=( "'nr_color':1" "'nr_color':2" "'nr_color':3" )
 
 
 for color in "${colors[@]}"; do
-	for range in "${ranges[@]}"; do
-		old_range=$(grep "noise_highcut=" model_config.py)
-		sed -i "s/$old_range/$range/g" model_config.py
+	for limit in "${limits[@]}"; do
+		old_limit=$(grep -o \'noise_highcut\':[0-9]* versions/config.py)
+		sed -i "s/$old_limit/$limit/g" versions/config.py
 
-		old_color=$(grep "noise_color=" model_config.py)
-		sed -i "s/$old_color/$color/g" model_config.py
+		old_color=$(grep -o \'nr_color\':[0-9]* versions/config.py)
+		sed -i "s/$old_color/$color/g" versions/config.py
 
 		echo "#!/bin/bash" > jobfile.sh
 		echo "#SBATCH --job-name AttractorSimulation" >> jobfile.sh
@@ -20,12 +20,12 @@ for color in "${colors[@]}"; do
 
 		echo "cd $HOME/LNDG/Noise_Color_Attractor_Model" >> jobfile.sh
 		echo "module load conda" >> jobfile.sh
-		echo "conda activate py2" >> jobfile.sh
+		echo "conda activate py3" >> jobfile.sh
 
-		echo "ipython versions/colored_noise_gaba_trial.py" >> jobfile.sh
+		echo "python versions/run_simulation.py" >> jobfile.sh
 		sbatch jobfile.sh
 		rm jobfile.sh
-		sleep 20
+		sleep 15
 	done
 done
 
