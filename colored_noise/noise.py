@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 class colored_noise(): 
     """
@@ -10,7 +11,7 @@ class colored_noise():
         noise_color = noise_dict[params['nr_color']]
         noise_lowcut = params['noise_lowcut']
         noise_highcut = params['noise_highcut']
-        self.csvfile = 'colored_noise/%s_noise_%d-%d.csv' % (noise_color, noise_lowcut, noise_highcut)
+        self.csvfile = os.path.join('noise_files', f'colored_noise/{noise_color}_noise_f{noise_lowcut}-f{noise_highcut}.csv')
         self.traces = self.load() 
     
     def load(self):

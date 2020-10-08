@@ -18,5 +18,5 @@ for i = 1:4
     lfx = log(fx);
     PowFreqCorr = [PowFreqCorr, corr(lfx',lpxx')];
 end 
-csvwrite(strcat(noisecolor, '_noise_', string(range(1)), '-', string(range(2)), '.csv'), noise)
+csvwrite(fullfile('noise_files',strcat(noisecolor, '_noise_', string(range(1)), '-', string(range(2)), '.csv')), noise)
 end
