@@ -1,10 +1,9 @@
+import os, sys, importlib
+sys.path.append(os.getcwd())
 import numpy as np
-import os, sys
-sys.path.append('/home/mpib/kamp/LNDG/Noise_Color_Attractor_Model')
-import versions.parellel_integration as parallel
-import versions.config as config
-model = __import__(config.model_name)
-from data_handling.DataContainer import DataContainer
+import parellel_integration as parallel
+import config
+model = importlib.import_module('models.'+config.model_name)
 from data_handling.DataAnalyzer import DataAnalyzer
 
 simulate = True # set to false to only generate new plots
@@ -49,11 +48,10 @@ for p in param_grid:
 
 	# Create an instance of callback class
 	nr_simulations = parallel_range.shape[0]
-	dc = DataContainer(hdf5file + '.hdf5')
 
 	# Run simulation
 	if simulate:
-		parallel.run_integration(model.func, params, init_values, parallel_var, parallel_range, hdf5file, hdf5node)
+		dc = parallel.run_integration(model.func, params, init_values, parallel_var, parallel_range, hdf5file, hdf5node)
 	
 	# Create instance of data analyzer
 	da = DataAnalyzer(dc)

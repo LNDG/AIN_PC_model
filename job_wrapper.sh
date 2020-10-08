@@ -4,11 +4,11 @@ colors=( "'nr_color':1" "'nr_color':2" "'nr_color':3" )
 
 for color in "${colors[@]}"; do
 	for limit in "${limits[@]}"; do
-		old_limit=$(grep -o \'noise_highcut\':[0-9]* versions/config.py)
-		sed -i "s/$old_limit/$limit/g" versions/config.py
+		old_limit=$(grep -o \'noise_highcut\':[0-9]* config.py)
+		sed -i "s/$old_limit/$limit/g" config.py
 
-		old_color=$(grep -o \'nr_color\':[0-9]* versions/config.py)
-		sed -i "s/$old_color/$color/g" versions/config.py
+		old_color=$(grep -o \'nr_color\':[0-9]* config.py)
+		sed -i "s/$old_color/$color/g" config.py
 
 		echo "#!/bin/bash" > jobfile.sh
 		echo "#SBATCH --job-name AttractorSimulation" >> jobfile.sh
@@ -22,7 +22,7 @@ for color in "${colors[@]}"; do
 		echo "module load conda" >> jobfile.sh
 		echo "conda activate py3" >> jobfile.sh
 
-		echo "python versions/run_simulation.py" >> jobfile.sh
+		echo "python parallel/run_simulation.py" >> jobfile.sh
 		sbatch jobfile.sh
 		rm jobfile.sh
 		sleep 15

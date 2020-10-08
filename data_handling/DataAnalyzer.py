@@ -1,14 +1,4 @@
-#!/usr/bin/env python
-# encoding: utf-8
-"""
-EyeLinkSession.py
-
-Created by Tomas Knapen on 2011-04-27.
-Copyright (c) 2011 __MyCompanyName__. All rights reserved.
-"""
-
 import os, sys, pickle, math, _thread, time, datetime
-
 import scipy as sp
 import scipy.signal as signal
 import scipy.stats as stats

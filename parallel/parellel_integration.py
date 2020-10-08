@@ -1,11 +1,11 @@
-import os, sys, pickle, math, threading, time
+import os, sys, importlib
 import numpy as np
 import pygsl._numobj
 from pygsl import odeiv, Float
 from joblib import Parallel, delayed
 from data_handling.DataContainer import DataContainer
-from versions.config import model_name
-model = __import__(model_name)
+import config 
+model = importlib.import_module('models.'+config.model_name)
 from colored_noise.noise import colored_noise
 
 def npS(input, params):
@@ -76,4 +76,5 @@ def run_integration(func, params, init_values, variable, variable_range, hdf5fil
 	# running these in parallel
 	sim_result = Parallel(n_jobs=nr_simulations)(delayed(integrate_model)(func, p, init_values) for p in params_generator(params, variable, variable_range))
 	dc.save_to_hdf_file(hdf5node, sim_result)
+	return dc
 	
