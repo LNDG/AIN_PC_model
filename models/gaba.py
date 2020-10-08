@@ -9,7 +9,7 @@ def S( input, NRa, NRs ):
 	else:
 		return 0.
 
-def set_up(**grid): 
+def set_up(): 
 	params = config.create_params(dimension=4, nr_noise_tc=2, nr_act_tc=2)
 	init_values = pygsl._numobj.array((0.5,0.5,0,0))
 	return params, init_values
